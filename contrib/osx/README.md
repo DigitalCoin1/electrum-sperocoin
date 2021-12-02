@@ -5,7 +5,7 @@ Building macOS binaries
    Please help us remedy this.
    [(see #7266)](https://github.com/spesmilo/electrum/issues/7266)_
 
-This guide explains how to build electrum-onion binaries for macOS systems.
+This guide explains how to build electrum-spero binaries for macOS systems.
 
 
 ## Building the binary
@@ -58,12 +58,12 @@ On newer Mac, run:
 Move `prebuilt_qr` to El Capitan: `contrib/osx/CalinsQRReader/prebuilt_qr`.
 
 
-#### 2. Build electrum-onion
+#### 2. Build electrum-spero
 
-    cd electrum-onion
+    cd electrum-spero
     ./contrib/osx/make_osx
 
-This creates both a folder named electrum-onion.app and the .dmg file.
+This creates both a folder named electrum-spero.app and the .dmg file.
 
 If you want the binaries codesigned for MacOS and notarised by Apple's central server,
 provide these env vars to the `make_osx` script:

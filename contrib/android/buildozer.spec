@@ -1,13 +1,13 @@
 [app]
 
 # (str) Title of your application
-title = electrum-onion
+title = electrum-spero
 
 # (str) Package name
-package.name = electrum_onion
+package.name = electrum_spero
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.electrum_onion
+package.domain = org.electrum_spero
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -20,9 +20,9 @@ source.exclude_exts = spec
 
 # (list) List of directory to exclude (let empty to not exclude anything)
 source.exclude_dirs = bin, build, dist, contrib,
-    electrum_onion/tests,
-    electrum_onion/gui/qt,
-    electrum_onion/gui/kivy/theming/light,
+    electrum_spero/tests,
+    electrum_spero/gui/qt,
+    electrum_spero/gui/kivy/theming/light,
     packages/qdarkstyle,
     packages/qtpy
 # (list) List of exclusions using pattern matching
@@ -30,7 +30,7 @@ source.exclude_patterns = Makefile,setup*
 
 # (str) Application versioning (method 1)
 version.regex = APK_VERSION = '(.*)'
-version.filename = %(source.dir)s/electrum_onion/version.py
+version.filename = %(source.dir)s/electrum_spero/version.py
 
 # (str) Application versioning (method 2)
 #version = 1.9.8
@@ -47,16 +47,16 @@ requirements =
     libffi,
     libsecp256k1,
     cryptography,
-    deeponion-x13-hash==1.0.4
+    sperocoin-x13-hash==1.0.4
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/gui/kivy/theming/splash.png
-presplash.filename = %(source.dir)s/electrum_onion/gui/icons/electrum_presplash.png
+presplash.filename = %(source.dir)s/electrum_spero/gui/icons/electrum_presplash.png
 
 # (str) Icon of the application
-icon.filename = %(source.dir)s/electrum_onion/gui/icons/android_electrum_icon_legacy.png
-icon.adaptive_foreground.filename = %(source.dir)s/electrum_onion/gui/icons/android_electrum_icon_foreground.png
-icon.adaptive_background.filename = %(source.dir)s/electrum_onion/gui/icons/android_electrum_icon_background.png
+icon.filename = %(source.dir)s/electrum_spero/gui/icons/android_electrum_icon_legacy.png
+icon.adaptive_foreground.filename = %(source.dir)s/electrum_spero/gui/icons/android_electrum_icon_foreground.png
+icon.adaptive_background.filename = %(source.dir)s/electrum_spero/gui/icons/android_electrum_icon_background.png
 
 # (str) Supported orientation (one of landscape, portrait or all)
 orientation = portrait
@@ -109,7 +109,7 @@ android.ant_path = /opt/android/apache-ant
 
 # (list) List of Java files to add to the android project (can be java or a
 # directory containing the files)
-android.add_src = electrum_onion/gui/kivy/data/java-classes/
+android.add_src = electrum_spero/gui/kivy/data/java-classes/
 
 android.gradle_dependencies = me.dm7.barcodescanner:zxing:1.9.8
 

@@ -4,8 +4,8 @@
 build/
 dist/
 *.egg/
-electrum_onion.egg-info/
-electrum_onion/locale/
+electrum_spero.egg-info/
+electrum_spero/locale/
 .devlocaltmp/
 *_trial_temp
 packages
@@ -16,12 +16,12 @@ bin/
 .idea
 .mypy_cache
 .vscode
-electrum-onion_data
+electrum-spero_data
 .DS_Store
 
 # icons
-electrum_onion/gui/kivy/theming/atlas/*.png
-electrum_onion/gui/kivy/theming/atlas/*.atlas
+electrum_spero/gui/kivy/theming/atlas/*.png
+electrum_spero/gui/kivy/theming/atlas/*.atlas
 
 # tests/tox
 .tox/
@@ -42,8 +42,8 @@ contrib/zbar/
 contrib/osx/build-venv/
 
 # shared objects
-electrum_onion/*.so
-electrum_onion/*.so.0
-electrum_onion/*.dll
-electrum_onion/*.dylib
+electrum_spero/*.so
+electrum_spero/*.so.0
+electrum_spero/*.dll
+electrum_spero/*.dylib
 contrib/osx/*.dylib

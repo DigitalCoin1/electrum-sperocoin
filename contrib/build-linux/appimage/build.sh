@@ -7,7 +7,7 @@ CONTRIB="$PROJECT_ROOT/contrib"
 CONTRIB_APPIMAGE="$CONTRIB/build-linux/appimage"
 DISTDIR="$PROJECT_ROOT/dist"
 BUILDDIR="$CONTRIB_APPIMAGE/build/appimage"
-APPDIR="$BUILDDIR/electrum-onion.AppDir"
+APPDIR="$BUILDDIR/electrum-spero.AppDir"
 CACHEDIR="$CONTRIB_APPIMAGE/.cache/appimage"
 PIP_CACHE_DIR="$CACHEDIR/pip_cache"
 
@@ -22,7 +22,7 @@ SQUASHFSKIT_COMMIT="ae0d656efa2d0df2fcac795b6823b44462f19386"
 
 
 VERSION=`git describe --tags --dirty --always`
-APPIMAGE="$DISTDIR/electrum-onion-$VERSION-x86_64.AppImage"
+APPIMAGE="$DISTDIR/electrum-spero-$VERSION-x86_64.AppImage"
 
 . "$CONTRIB"/build_tools_util.sh
 
@@ -81,7 +81,7 @@ MKSQUASHFS="$BUILDDIR/squashfskit/squashfs-tools/mksquashfs"
 
 
 "$CONTRIB"/make_libsecp256k1.sh || fail "Could not build libsecp"
-cp -f "$PROJECT_ROOT/electrum_onion/libsecp256k1.so.0" "$APPDIR/usr/lib/libsecp256k1.so.0" || fail "Could not copy libsecp to its destination"
+cp -f "$PROJECT_ROOT/electrum_spero/libsecp256k1.so.0" "$APPDIR/usr/lib/libsecp256k1.so.0" || fail "Could not copy libsecp to its destination"
 
 
 appdir_python() {
@@ -110,9 +110,9 @@ info "preparing electrum-locale."
         fail "Please install gettext"
     fi
     # we want the binary to have only compiled (.mo) locale files; not source (.po) files
-    rm -rf "$PROJECT_ROOT/electrum_onion/locale/"
+    rm -rf "$PROJECT_ROOT/electrum_spero/locale/"
     for i in ./locale/*; do
-        dir="$PROJECT_ROOT/electrum_onion/$i/LC_MESSAGES"
+        dir="$PROJECT_ROOT/electrum_spero/$i/LC_MESSAGES"
         mkdir -p $dir
         msgfmt --output-file="$dir/electrum.mo" "$i/electrum.po" || true
     done
@@ -136,7 +136,7 @@ info "installing electrum and its dependencies."
 "$python" -m pip install --no-dependencies --no-binary :all: --no-warn-script-location \
     --cache-dir "$PIP_CACHE_DIR" -r "$CONTRIB/deterministic-build/requirements-hw.txt"
 "$python" -m pip install --no-dependencies --no-binary :all: --no-warn-script-location \
-    --cache-dir "$PIP_CACHE_DIR" deeponion-x13-hash==1.0.4
+    --cache-dir "$PIP_CACHE_DIR" sperocoin-x13-hash==1.0.4
 "$python" -m pip install --no-dependencies --no-warn-script-location \
     --cache-dir "$PIP_CACHE_DIR" "$PROJECT_ROOT"
 
@@ -149,8 +149,8 @@ cp "/usr/lib/x86_64-linux-gnu/libzbar.so.0" "$APPDIR/usr/lib/libzbar.so.0"
 
 
 info "desktop integration."
-cp "$PROJECT_ROOT/electrum-onion.desktop" "$APPDIR/electrum-onion.desktop"
-cp "$PROJECT_ROOT/electrum_onion/gui/icons/electrum-onion.png" "$APPDIR/electrum-onion.png"
+cp "$PROJECT_ROOT/electrum-spero.desktop" "$APPDIR/electrum-spero.desktop"
+cp "$PROJECT_ROOT/electrum_spero/gui/icons/electrum-spero.png" "$APPDIR/electrum-spero.png"
 
 
 # add launcher

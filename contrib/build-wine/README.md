@@ -24,7 +24,7 @@ folder.
 2. Build image
 
     ```
-    $ sudo docker build -t electrum-onion-wine-builder-img contrib/build-wine
+    $ sudo docker build -t electrum-spero-wine-builder-img contrib/build-wine
     ```
 
     Note: see [this](https://stackoverflow.com/a/40516974/7499128) if having dns problems
@@ -39,19 +39,19 @@ folder.
         sudo rm -rf $FRESH_CLONE && \
         mkdir -p $FRESH_CLONE && \
         cd $FRESH_CLONE  && \
-        git clone https://github.com/thohemp/electrum-onion.git && \
-        cd electrum-onion
+        git clone https://github.com/thohemp/electrum-spero.git && \
+        cd electrum-spero
     ```
 
     And then build from this directory:
     ```
     $ git checkout $REV
     $ sudo docker run -it \
-        --name electrum-onion-wine-builder-cont \
-        -v $PWD:/opt/wine64/drive_c/electrum-onion \
+        --name electrum-spero-wine-builder-cont \
+        -v $PWD:/opt/wine64/drive_c/electrum-spero \
         --rm \
-        --workdir /opt/wine64/drive_c/electrum-onion/contrib/build-wine \
-        electrum-onion-wine-builder-img \
+        --workdir /opt/wine64/drive_c/electrum-spero/contrib/build-wine \
+        electrum-spero-wine-builder-img \
         ./build.sh
     ```
 4. The generated binaries are in `./contrib/build-wine/dist`.
@@ -61,10 +61,10 @@ folder.
 Code Signing
 ============
 
-electrum-onion Windows builds are signed with a Microsoft Authenticode™ code signing
+electrum-spero Windows builds are signed with a Microsoft Authenticode™ code signing
 certificate in addition to the GPG-based signatures.
 
-The advantage of using Authenticode is that electrum-onion users won't receive a 
+The advantage of using Authenticode is that electrum-spero users won't receive a 
 Windows SmartScreen warning when starting it.
 
 The release signing procedure involves a signer (the holder of the
@@ -82,7 +82,7 @@ certificate/key) and one or multiple trusted verifiers:
 
 | Signer and verifiers:                                                                         |
 |-----------------------------------------------------------------------------------------------|
-| Upload signatures to 'electrum-onion-signatures' repo, as `$version/$filename.$builder.asc`         |
+| Upload signatures to 'electrum-spero-signatures' repo, as `$version/$filename.$builder.asc`         |
 
 
 

@@ -20,7 +20,7 @@ folder.
 2. Build image
 
     ```
-    $ sudo docker build -t electrum-onion-sdist-builder-img contrib/build-linux/sdist
+    $ sudo docker build -t electrum-spero-sdist-builder-img contrib/build-linux/sdist
     ```
 
 3. Build source tarballs
@@ -34,8 +34,8 @@ folder.
         umask 0022 && \
         mkdir -p $FRESH_CLONE && \
         cd $FRESH_CLONE  && \
-        git clone https://github.com/thohemp/electrum-onion.git && \
-        cd electrum-onion
+        git clone https://github.com/thohemp/electrum-spero.git && \
+        cd electrum-spero
     ```
 
     And then build from this directory:
@@ -43,10 +43,10 @@ folder.
     $ git checkout $REV
     $ sudo docker run -it \
         --name electrum-sdist-builder-cont \
-        -v $PWD:/opt/electrum-onion \
+        -v $PWD:/opt/electrum-spero \
         --rm \
-        --workdir /opt/electrum-onion/contrib/build-linux/sdist \
-        electrum-onion-sdist-builder-img \
+        --workdir /opt/electrum-spero/contrib/build-linux/sdist \
+        electrum-spero-sdist-builder-img \
         ./build.sh
     ```
 4. The generated distributables are in `./dist`.

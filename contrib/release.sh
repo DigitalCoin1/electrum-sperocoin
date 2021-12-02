@@ -14,7 +14,7 @@ cd $ELECTRUM_DIR
 # rm -f .buildozer
 
 
-VERSION=`python3 -c "import electrum_onion; print(electrum_onion.version.ELECTRUM_VERSION)"`
+VERSION=`python3 -c "import electrum_spero; print(electrum_spero.version.ELECTRUM_VERSION)"`
 echo "VERSION: $VERSION"
 REV=`git describe --tags`
 echo "REV: $REV"

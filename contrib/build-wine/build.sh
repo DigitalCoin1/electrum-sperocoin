@@ -25,7 +25,7 @@ export CONTRIB="$here/.."
 export PROJECT_ROOT="$CONTRIB/.."
 export CACHEDIR="$here/.cache/$WIN_ARCH"
 export PIP_CACHE_DIR="$CACHEDIR/wine_pip_cache"
-export WINE_PIP_CACHE_DIR="c:/electrum-onion/contrib/build-wine/.cache/$WIN_ARCH/wine_pip_cache"
+export WINE_PIP_CACHE_DIR="c:/electrum-spero/contrib/build-wine/.cache/$WIN_ARCH/wine_pip_cache"
 export DLL_TARGET_DIR="$CACHEDIR/dlls"
 
 export WINEPREFIX="/opt/wine64"
@@ -54,12 +54,12 @@ else
 fi
 
 info "Downloading x13 lib"
-X13_HASH_PATH=https://github.com/thohemp/deeponion-x13-hash/releases/download/1.0.5/
+X13_HASH_PATH=https://github.com/thohemp/sperocoin-x13-hash/releases/download/1.0.5/
 X13_HASH_FILE=
 if [ "$WIN_ARCH" = "win32" ] ; then
-    X13_HASH_FILE=deeponion-x13-hash-1.0.5-win32.zip
+    X13_HASH_FILE=sperocoin-x13-hash-1.0.5-win32.zip
 else 
-    X13_HASH_FILE=deeponion-x13-hash-1.0.5-win64.zip
+    X13_HASH_FILE=sperocoin-x13-hash-1.0.5-win64.zip
 fi
 
 X13_HASH_SHA=0a816a1710ad9abfec26cb388d3ace11da804e2873782c2aed7834e1bfb592df
@@ -67,7 +67,7 @@ wget ${X13_HASH_PATH}/${X13_HASH_FILE}
 echo "$X13_HASH_SHA  $X13_HASH_FILE" > sha256.txt
 shasum -a256 -s -c sha256.txt
 unzip ${X13_HASH_FILE} && rm ${X13_HASH_FILE} sha256.txt
-cp "$here/deeponion-x13-hash/libx13hash-0.dll" "$DLL_TARGET_DIR" || fail "Could not copy the x13 binary to DLL_TARGET_DIR"
+cp "$here/sperocoin-x13-hash/libx13hash-0.dll" "$DLL_TARGET_DIR" || fail "Could not copy the x13 binary to DLL_TARGET_DIR"
 
 $here/prepare-wine.sh || fail "prepare-wine failed"
 

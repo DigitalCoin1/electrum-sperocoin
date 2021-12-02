@@ -26,7 +26,7 @@ with open('contrib/requirements/requirements-hw.txt') as f:
     requirements_hw = f.read().splitlines()
 
 # load version.py; needlessly complicated alternative to "imp.load_source":
-version_spec = importlib.util.spec_from_file_location('version', 'electrum_onion/version.py')
+version_spec = importlib.util.spec_from_file_location('version', 'electrum_spero/version.py')
 version_module = version = importlib.util.module_from_spec(version_spec)
 version_spec.loader.exec_module(version_module)
 
@@ -46,8 +46,8 @@ if platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
         else:
             usr_share = os.path.expanduser('~/.local/share')
     data_files += [
-        (os.path.join(usr_share, 'applications/'), ['electrum-onion.desktop']),
-        (os.path.join(usr_share, icons_dirname), ['electrum_onion/gui/icons/electrum-onion.png']),
+        (os.path.join(usr_share, 'applications/'), ['electrum-spero.desktop']),
+        (os.path.join(usr_share, icons_dirname), ['electrum_spero/gui/icons/electrum-spero.png']),
     ]
 
 extras_require = {
@@ -65,30 +65,30 @@ extras_require['fast'] = extras_require['crypto']
 
 
 setup(
-    name="electrum-onion",
+    name="electrum-spero",
     version=version.ELECTRUM_VERSION,
     python_requires='>={}'.format(MIN_PYTHON_VERSION),
     install_requires=requirements,
     extras_require=extras_require,
     packages=[
-        'electrum_onion',
-        'electrum_onion.gui',
-        'electrum_onion.gui.qt',
-        'electrum_onion.plugins',
-    ] + [('electrum_onion.plugins.'+pkg) for pkg in find_packages('electrum_onion/plugins')],
+        'electrum_spero',
+        'electrum_spero.gui',
+        'electrum_spero.gui.qt',
+        'electrum_spero.plugins',
+    ] + [('electrum_spero.plugins.'+pkg) for pkg in find_packages('electrum_spero/plugins')],
     package_dir={
-        'electrum_onion': 'electrum_onion'
+        'electrum_spero': 'electrum_spero'
     },
     # Note: MANIFEST.in lists what gets included in the tar.gz, and the
     # package_data kwarg lists what gets put in site-packages when pip installing the tar.gz.
     # By specifying include_package_data=True, MANIFEST.in becomes responsible for both.
     include_package_data=True,
-    scripts=['electrum_onion/electrum-onion'],
+    scripts=['electrum_spero/electrum-spero'],
     data_files=data_files,
-    description="Lightweight DeepOnion Wallet",
+    description="Lightweight SperoCoin Wallet",
     author="Thomas Voegtlin",
     author_email="thomasv@electrum.org",
     license="MIT Licence",
-    url="https://deeponion.org",
-    long_description="""Lightweight DeepOnion Wallet""",
+    url="https://sperocoin.org",
+    long_description="""Lightweight SperoCoin Wallet""",
 )

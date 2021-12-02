@@ -1,0 +1,22 @@
+# If you want Electrum to appear in a Linux app launcher ("start menu"), install this by doing:
+# sudo desktop-file-install electrum-spero.desktop
+
+[Desktop Entry]
+Comment=Lightweight SperoCoin Client
+Exec=sh -c "PATH=\"\\$HOME/.local/bin:\\$PATH\"; electrum-spero %u"
+GenericName[en_US]=SperoCoin Wallet
+GenericName=SperoCoin Wallet
+Icon=electrum-spero
+Name[en_US]=Electrum SperoCoin Wallet
+Name=Electrum SperoCoin Wallet
+Categories=Finance;Network;
+StartupNotify=true
+StartupWMClass=electrum-spero
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/SperoCoin;
+Actions=Testnet;
+
+[Desktop Action Testnet]
+Exec=sh -c "PATH=\"\\$HOME/.local/bin:\\$PATH\"; electrum-spero --testnet %u"
+Name=Testnet mode

@@ -1,4 +1,4 @@
-AppImage binary for electrum-onion
+AppImage binary for electrum-spero
 ================================
 
 ✓ _This binary should be reproducible, meaning you should be able to generate
@@ -25,18 +25,18 @@ see [issue #5159](https://github.com/spesmilo/electrum/issues/5159).
 2. Build image
 
     ```
-    $ sudo docker build -t electrum-onion-appimage-builder-img contrib/build-linux/appimage
+    $ sudo docker build -t electrum-spero-appimage-builder-img contrib/build-linux/appimage
     ```
 
 3. Build binary
 
     ```
     $ sudo docker run -it \
-        --name electrum-onion-appimage-builder-cont \
-        -v $PWD:/opt/electrum-onion \
+        --name electrum-spero-appimage-builder-cont \
+        -v $PWD:/opt/electrum-spero \
         --rm \
-        --workdir /opt/electrum-onion/contrib/build-linux/appimage \
-        electrum-onion-appimage-builder-img \
+        --workdir /opt/electrum-spero/contrib/build-linux/appimage \
+        electrum-spero-appimage-builder-img \
         ./build.sh
     ```
 

@@ -10,7 +10,7 @@ for i, x in enumerate(sys.argv):
 else:
     raise Exception('no name')
 
-home = 'C:\\electrum-onion\\'
+home = 'C:\\electrum-spero\\'
 
 # see https://github.com/pyinstaller/pyinstaller/issues/2005
 hiddenimports = []
@@ -37,12 +37,12 @@ binaries += [('C:/tmp/libx13hash-0.dll', '.')]
 
 
 datas = [
-    (home+'electrum_onion/*.json', 'electrum_onion'),
-    (home+'electrum_onion/lnwire/*.csv', 'electrum_onion/lnwire'),
-    (home+'electrum_onion/wordlist/english.txt', 'electrum_onion/wordlist'),
-    (home+'electrum_onion/locale', 'electrum_onion/locale'),
-    (home+'electrum_onion/plugins', 'electrum_onion/plugins'),
-    (home+'electrum_onion/gui/icons', 'electrum_onion/gui/icons'),
+    (home+'electrum_spero/*.json', 'electrum_spero'),
+    (home+'electrum_spero/lnwire/*.csv', 'electrum_spero/lnwire'),
+    (home+'electrum_spero/wordlist/english.txt', 'electrum_spero/wordlist'),
+    (home+'electrum_spero/locale', 'electrum_spero/locale'),
+    (home+'electrum_spero/plugins', 'electrum_spero/plugins'),
+    (home+'electrum_spero/gui/icons', 'electrum_spero/gui/icons'),
 ]
 datas += collect_data_files('trezorlib')
 datas += collect_data_files('safetlib')
@@ -53,23 +53,23 @@ datas += collect_data_files('bitbox02')
 
 # We don't put these files in to actually include them in the script but to make the Analysis method scan them for imports
 a = Analysis([home+'run_electrum',
-              home+'electrum_onion/gui/qt/main_window.py',
-              home+'electrum_onion/gui/text.py',
-              home+'electrum_onion/util.py',
-              home+'electrum_onion/wallet.py',
-              home+'electrum_onion/simple_config.py',
-              home+'electrum_onion/bitcoin.py',
-              home+'electrum_onion/blockchain.py',
-              home+'electrum_onion/dnssec.py',
-              home+'electrum_onion/commands.py',
-              home+'electrum_onion/plugins/cosigner_pool/qt.py',
-              home+'electrum_onion/plugins/email_requests/qt.py',
-              home+'electrum_onion/plugins/trezor/qt.py',
-              home+'electrum_onion/plugins/safe_t/client.py',
-              home+'electrum_onion/plugins/safe_t/qt.py',
-              home+'electrum_onion/plugins/keepkey/qt.py',
-              home+'electrum_onion/plugins/ledger/qt.py',
-              home+'electrum_onion/plugins/coldcard/qt.py',
+              home+'electrum_spero/gui/qt/main_window.py',
+              home+'electrum_spero/gui/text.py',
+              home+'electrum_spero/util.py',
+              home+'electrum_spero/wallet.py',
+              home+'electrum_spero/simple_config.py',
+              home+'electrum_spero/bitcoin.py',
+              home+'electrum_spero/blockchain.py',
+              home+'electrum_spero/dnssec.py',
+              home+'electrum_spero/commands.py',
+              home+'electrum_spero/plugins/cosigner_pool/qt.py',
+              home+'electrum_spero/plugins/email_requests/qt.py',
+              home+'electrum_spero/plugins/trezor/qt.py',
+              home+'electrum_spero/plugins/safe_t/client.py',
+              home+'electrum_spero/plugins/safe_t/qt.py',
+              home+'electrum_spero/plugins/keepkey/qt.py',
+              home+'electrum_spero/plugins/ledger/qt.py',
+              home+'electrum_spero/plugins/coldcard/qt.py',
               #home+'packages/requests/utils.py'
               ],
              binaries=binaries,
@@ -117,11 +117,11 @@ exe_standalone = EXE(
     a.scripts,
     a.binaries,
     a.datas,
-    name=os.path.join('build\\pyi.win32\\electrum-onion', cmdline_name + ".exe"),
+    name=os.path.join('build\\pyi.win32\\electrum-spero', cmdline_name + ".exe"),
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum_onion/gui/icons/electrum.ico',
+    icon=home+'electrum_spero/gui/icons/electrum.ico',
     console=False)
     # console=True makes an annoying black box pop up, but it does make Electrum output command line commands, with this turned off no output will be given but commands can still be used
 
@@ -130,11 +130,11 @@ exe_portable = EXE(
     a.scripts,
     a.binaries,
     a.datas + [('is_portable', 'README.md', 'DATA')],
-    name=os.path.join('build\\pyi.win32\\electrum-onion', cmdline_name + "-portable.exe"),
+    name=os.path.join('build\\pyi.win32\\electrum-spero', cmdline_name + "-portable.exe"),
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum_onion/gui/icons/electrum.ico',
+    icon=home+'electrum_spero/gui/icons/electrum.ico',
     console=False)
 
 #####
@@ -144,22 +144,22 @@ exe_inside_setup_noconsole = EXE(
     pyz,
     a.scripts,
     exclude_binaries=True,
-    name=os.path.join('build\\pyi.win32\\electrum-onion', cmdline_name),
+    name=os.path.join('build\\pyi.win32\\electrum-spero', cmdline_name),
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum_onion/gui/icons/electrum.ico',
+    icon=home+'electrum_spero/gui/icons/electrum.ico',
     console=False)
 
 exe_inside_setup_console = EXE(
     pyz,
     a.scripts,
     exclude_binaries=True,
-    name=os.path.join('build\\pyi.win32\\electrum-onion', cmdline_name+"-debug"),
+    name=os.path.join('build\\pyi.win32\\electrum-spero', cmdline_name+"-debug"),
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum_onion/gui/icons/electrum.ico',
+    icon=home+'electrum_spero/gui/icons/electrum.ico',
     console=True)
 
 coll = COLLECT(
@@ -171,6 +171,6 @@ coll = COLLECT(
     strip=None,
     upx=True,
     debug=False,
-    icon=home+'electrum_onion/gui/icons/electrum.ico',
+    icon=home+'electrum_spero/gui/icons/electrum.ico',
     console=False,
-    name=os.path.join('dist', 'electrum-onion'))
+    name=os.path.join('dist', 'electrum-spero'))

@@ -17,15 +17,15 @@ export PATH=$PATH:~/bin
 . $(dirname "$0")/base.sh
 
 if [ -z "$1" ]; then
-    echo "Usage: $0 electrum-onion.app"
+    echo "Usage: $0 electrum-spero.app"
     exit -127
 fi
 
 mkdir -p ~/bin
 
 if ! which ${genisoimage} > /dev/null 2>&1; then
-	mkdir -p /tmp/electrum-onion-macos
-	cd /tmp/electrum-onion-macos
+	mkdir -p /tmp/electrum-spero-macos
+	cd /tmp/electrum-spero-macos
 	info "Downloading cdrkit $cdrkit_version"
 	wget -nc ${cdrkit_download_path}/${cdrkit_file_name}
 	tar xvf ${cdrkit_file_name}
@@ -41,8 +41,8 @@ if ! which ${genisoimage} > /dev/null 2>&1; then
 fi
 
 if ! which dmg > /dev/null 2>&1; then
-    mkdir -p /tmp/electrum-onion-macos
-	cd /tmp/electrum-onion-macos
+    mkdir -p /tmp/electrum-spero-macos
+	cd /tmp/electrum-spero-macos
 	info "Downloading libdmg"
     LD_PRELOAD= git clone ${libdmg_url}
     cd libdmg-hfsplus
@@ -60,9 +60,9 @@ test -f "$plist" || fail "Info.plist not found"
 VERSION=$(grep -1 ShortVersionString $plist |tail -1|gawk 'match($0, /<string>(.*)<\/string>/, a) {print a[1]}')
 echo $VERSION
 
-rm -rf /tmp/electrum-onion-macos/image > /dev/null 2>&1
-mkdir /tmp/electrum-onion-macos/image/
-cp -r $1 /tmp/electrum-onion-macos/image/
+rm -rf /tmp/electrum-spero-macos/image > /dev/null 2>&1
+mkdir /tmp/electrum-spero-macos/image/
+cp -r $1 /tmp/electrum-spero-macos/image/
 
 build_dir=$(dirname "$1")
 test -n "$build_dir" -a -d "$build_dir" || exit
@@ -73,16 +73,16 @@ ${genisoimage} \
     -D \
     -l \
     -probe \
-    -V "electrum-onion" \
+    -V "electrum-spero" \
     -no-pad \
     -r \
     -dir-mode 0755 \
     -apple \
-    -o electrum-onion_uncompressed.dmg \
-    /tmp/electrum-onion-macos/image || fail "Unable to create uncompressed dmg"
+    -o electrum-spero_uncompressed.dmg \
+    /tmp/electrum-spero-macos/image || fail "Unable to create uncompressed dmg"
 
-dmg dmg electrum-onion_uncompressed.dmg electrum-onion-$VERSION.dmg || fail "Unable to create compressed dmg"
-rm electrum-onion_uncompressed.dmg
+dmg dmg electrum-spero_uncompressed.dmg electrum-spero-$VERSION.dmg || fail "Unable to create compressed dmg"
+rm electrum-spero_uncompressed.dmg
 
 echo "Done."
-sha256sum electrum-onion-$VERSION.dmg
+sha256sum electrum-spero-$VERSION.dmg

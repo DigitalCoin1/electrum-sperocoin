@@ -4,8 +4,8 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, coll
 
 import sys, os
 
-PACKAGE='electrum-onion'
-PYPKG='electrum_onion'
+PACKAGE='electrum-spero'
+PYPKG='electrum_spero'
 MAIN_SCRIPT='run_electrum'
 ICONS_FILE=PYPKG + '/gui/icons/electrum.icns'
 APP_SIGN = os.environ.get('APP_SIGN', '')
@@ -96,23 +96,23 @@ binaries += [b for b in collect_dynamic_libs('PyQt5') if 'macstyle' in b[0]]
 
 # We don't put these files in to actually include them in the script but to make the Analysis method scan them for imports
 a = Analysis([electrum+ MAIN_SCRIPT,
-              electrum+'electrum_onion/gui/qt/main_window.py',
-              electrum+'electrum_onion/gui/text.py',
-              electrum+'electrum_onion/util.py',
-              electrum+'electrum_onion/wallet.py',
-              electrum+'electrum_onion/simple_config.py',
-              electrum+'electrum_onion/bitcoin.py',
-              electrum+'electrum_onion/blockchain.py',
-              electrum+'electrum_onion/dnssec.py',
-              electrum+'electrum_onion/commands.py',
-              electrum+'electrum_onion/plugins/cosigner_pool/qt.py',
-              electrum+'electrum_onion/plugins/email_requests/qt.py',
-              electrum+'electrum_onion/plugins/trezor/qt.py',
-              electrum+'electrum_onion/plugins/safe_t/client.py',
-              electrum+'electrum_onion/plugins/safe_t/qt.py',
-              electrum+'electrum_onion/plugins/keepkey/qt.py',
-              electrum+'electrum_onion/plugins/ledger/qt.py',
-              electrum+'electrum_onion/plugins/coldcard/qt.py',
+              electrum+'electrum_spero/gui/qt/main_window.py',
+              electrum+'electrum_spero/gui/text.py',
+              electrum+'electrum_spero/util.py',
+              electrum+'electrum_spero/wallet.py',
+              electrum+'electrum_spero/simple_config.py',
+              electrum+'electrum_spero/bitcoin.py',
+              electrum+'electrum_spero/blockchain.py',
+              electrum+'electrum_spero/dnssec.py',
+              electrum+'electrum_spero/commands.py',
+              electrum+'electrum_spero/plugins/cosigner_pool/qt.py',
+              electrum+'electrum_spero/plugins/email_requests/qt.py',
+              electrum+'electrum_spero/plugins/trezor/qt.py',
+              electrum+'electrum_spero/plugins/safe_t/client.py',
+              electrum+'electrum_spero/plugins/safe_t/qt.py',
+              electrum+'electrum_spero/plugins/keepkey/qt.py',
+              electrum+'electrum_spero/plugins/ledger/qt.py',
+              electrum+'electrum_spero/plugins/coldcard/qt.py',
               ],
              binaries=binaries,
              datas=datas,
