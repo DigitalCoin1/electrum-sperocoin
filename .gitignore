@@ -1,0 +1,49 @@
+####-*.patch
+*.pyc
+*.swp
+build/
+dist/
+*.egg/
+electrum_onion.egg-info/
+electrum_onion/locale/
+.devlocaltmp/
+*_trial_temp
+packages
+env/
+.buildozer/
+bin/
+/app.fil
+.idea
+.mypy_cache
+.vscode
+electrum-onion_data
+.DS_Store
+
+# icons
+electrum_onion/gui/kivy/theming/atlas/*.png
+electrum_onion/gui/kivy/theming/atlas/*.atlas
+
+# tests/tox
+.tox/
+.cache/
+.coverage
+.pytest_cache
+
+# build workspaces
+contrib/build-wine/tmp/
+contrib/build-wine/fresh_clone/
+contrib/build-linux/sdist/fresh_clone/
+contrib/build-linux/appimage/build/
+contrib/build-linux/appimage/.cache/
+contrib/android_debug.keystore
+contrib/android/android_debug.keystore
+contrib/secp256k1/
+contrib/zbar/
+contrib/osx/build-venv/
+
+# shared objects
+electrum_onion/*.so
+electrum_onion/*.so.0
+electrum_onion/*.dll
+electrum_onion/*.dylib
+contrib/osx/*.dylib
