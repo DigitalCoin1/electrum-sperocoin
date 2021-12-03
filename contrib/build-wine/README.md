@@ -39,7 +39,7 @@ folder.
         sudo rm -rf $FRESH_CLONE && \
         mkdir -p $FRESH_CLONE && \
         cd $FRESH_CLONE  && \
-        git clone https://github.com/thohemp/electrum-spero.git && \
+        git clone https://github.com/DigitalCoin1/electrum-spero.git && \
         cd electrum-spero
     ```
 

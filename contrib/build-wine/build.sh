@@ -54,7 +54,7 @@ else
 fi
 
 info "Downloading x13 lib"
-X13_HASH_PATH=https://github.com/thohemp/sperocoin-x13-hash/releases/download/1.0.5/
+X13_HASH_PATH=https://github.com/DigitalCoin1/sperocoin-x13-hash/releases/download/1.0.5/
 X13_HASH_FILE=
 if [ "$WIN_ARCH" = "win32" ] ; then
     X13_HASH_FILE=sperocoin-x13-hash-1.0.5-win32.zip
