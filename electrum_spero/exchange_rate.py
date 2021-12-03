@@ -25,7 +25,7 @@ from .logging import Logger
 
 DEFAULT_ENABLED = False
 DEFAULT_CURRENCY = "USD"
-DEFAULT_EXCHANGE = "CoinGecko"  # default exchange should ideally provide historical rates
+DEFAULT_EXCHANGE = "CoinPaprika"  # default exchange should ideally provide historical rates
 
 
 # See https://en.wikipedia.org/wiki/ISO_4217
@@ -257,6 +257,23 @@ class CoinGecko(ExchangeBase):
         return dict([(datetime.utcfromtimestamp(h[0]/1000).strftime('%Y-%m-%d'), h[1])
                      for h in history['prices']])
 
+
+class CoinPaprika(ExchangeBase):
+
+    def get_rates(self, ccy):
+        ccys = ['BTC', 'ETH', 'USD', 'EUR', 'PLN', 'KRW', 'GBP', 'CAD', 'JPY', 'RUB', 'TRY', 'NZD', 'AUD', 'CHF', 'UAH',
+                'HKD', 'SGD', 'NGN', 'PHP', 'MXN', 'BRL', 'THB', 'CLP', 'CNY', 'CZK', 'DKK', 'HUF', 'IDR', 'ILS', 'INR',
+                'MYR', 'NOK', 'PKR', 'SEK', 'TWD', 'ZAR', 'VND', 'BOB', 'COP', 'PEN', 'ARS', 'ISK']
+        json = self.get_json('api.coinpaprika.com', '/v1/tickers/spero-sperocoin?quotes=%s' % ','.join(ccys))
+        prices = json['quotes']
+        return dict([(curr, PyDecimal(data["price"])) for curr, data in prices.items()])
+
+    def history_ccys(self):
+        return ['BTC', 'USD']
+
+    def request_history(self, ccy):
+        history = self.get_json('api.coinpaprika.com', '/v1/tickers/spero-sperocoin/historical?start=2021-07-08&interval=24h')
+        return dict([(item['timestamp'].split('T')[0], item['price']) for item in history])
 
 class CoinSpot(ExchangeBase):
 
