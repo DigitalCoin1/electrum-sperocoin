@@ -1,26 +1,8 @@
 {
-    "jovq3xolrfayuvs6.spero": {
+    "electrumx.sperocoin.org": {
         "pruning": "-",
-        "s": "50002",
-        "t": "50003",
-        "version": "1.2"
-    },
-    "ljryntkv2xwiv66s.spero": {
-        "pruning": "-",
-        "s": "50002",
-        "t": "50003",
-        "version": "1.2"
-    },
-    "p44pg56zpqbrrne3.spero": {
-        "pruning": "-",
-        "s": "50002",
-        "t": "50003",
-        "version": "1.2"
-    },
-    "r3uuzs5vdeab6ciz.spero": {
-        "pruning": "-",
-        "s": "50002",
-        "t": "50003",
+        "s": "82",
+        "t": "81",
         "version": "1.2"
     }
 }
