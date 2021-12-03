@@ -938,9 +938,9 @@ def maybe_extract_bolt11_invoice(data: str) -> Optional[str]:
     if len(data) < 40:
         return None
     data = data.lower()
-    if data.startswith(LIGHTNING_URI_SCHEME + ':d'):
+    if data.startswith(LIGHTNING_URI_SCHEME + ':s'):
         data = data[10:]
-    if data.startswith('D'):
+    if data.startswith('S'):
         return data
     return None
 
