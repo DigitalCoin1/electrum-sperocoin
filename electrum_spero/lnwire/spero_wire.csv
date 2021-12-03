@@ -22,11 +22,11 @@ msgtype,invalid_realm,PERM|1
 msgtype,temporary_node_failure,NODE|2
 msgtype,permanent_node_failure,PERM|NODE|2
 msgtype,required_node_feature_missing,PERM|NODE|3
-msgtype,invalid_spero_version,BADONION|PERM|4
+msgtype,invalid_spero_version,BADSPERO|PERM|4
 msgdata,invalid_spero_version,sha256_of_spero,sha256,
-msgtype,invalid_spero_hmac,BADONION|PERM|5
+msgtype,invalid_spero_hmac,BADSPERO|PERM|5
 msgdata,invalid_spero_hmac,sha256_of_spero,sha256,
-msgtype,invalid_spero_key,BADONION|PERM|6
+msgtype,invalid_spero_key,BADSPERO|PERM|6
 msgdata,invalid_spero_key,sha256_of_spero,sha256,
 msgtype,temporary_channel_failure,UPDATE|7
 msgdata,temporary_channel_failure,len,u16,

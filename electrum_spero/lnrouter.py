@@ -117,7 +117,7 @@ class RouteEdge(PathEdge):
 
     def has_feature_varspero(self) -> bool:
         features = LnFeatures(self.node_features)
-        return features.supports(LnFeatures.VAR_ONION_OPT)
+        return features.supports(LnFeatures.VAR_SPERO_OPT)
 
     def is_trampoline(self) -> bool:
         return False

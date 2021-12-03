@@ -765,13 +765,13 @@ class TestLNUtil(ElectrumTestCase):
         self.assertFalse(features.validate_transitive_dependencies())
         features = LnFeatures.PAYMENT_SECRET_REQ
         self.assertFalse(features.validate_transitive_dependencies())
-        features = LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_REQ
+        features = LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_REQ
         self.assertTrue(features.validate_transitive_dependencies())
         features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ
         self.assertFalse(features.validate_transitive_dependencies())
-        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_OPT
+        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_OPT
         self.assertTrue(features.validate_transitive_dependencies())
-        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_REQ
+        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_REQ
         self.assertTrue(features.validate_transitive_dependencies())
 
     def test_ln_features_for_init_message(self):
@@ -781,13 +781,13 @@ class TestLNUtil(ElectrumTestCase):
         self.assertEqual(features, features.for_init_message())
         features = LnFeatures.PAYMENT_SECRET_REQ
         self.assertEqual(features, features.for_init_message())
-        features = LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_REQ
+        features = LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_REQ
         self.assertEqual(features, features.for_init_message())
         features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ
         self.assertEqual(features, features.for_init_message())
-        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_OPT
+        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_OPT
         self.assertEqual(features, features.for_init_message())
-        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_REQ
+        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_REQ
         self.assertEqual(features, features.for_init_message())
 
     def test_ln_features_for_invoice(self):
@@ -797,15 +797,15 @@ class TestLNUtil(ElectrumTestCase):
         self.assertEqual(features, features.for_invoice())
         features = LnFeatures.PAYMENT_SECRET_REQ
         self.assertEqual(features, features.for_invoice())
-        features = LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_REQ
+        features = LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_REQ
         self.assertEqual(features, features.for_invoice())
         features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ
         self.assertEqual(LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ,
                          features.for_invoice())
-        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_OPT | LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ
-        self.assertEqual(LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_OPT,
+        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_OPT | LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ
+        self.assertEqual(LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_OPT,
                          features.for_invoice())
-        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_ONION_REQ
+        features = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.VAR_SPERO_REQ
         self.assertEqual(features, features.for_invoice())
 
     def test_ln_compare_features(self):
@@ -835,17 +835,17 @@ class TestLNUtil(ElectrumTestCase):
         with self.assertRaises(IncompatibleLightningFeatures):
             ln_compare_features(f2, f1)
 
-        f1 = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT | LnFeatures.VAR_ONION_OPT
-        f2 = LnFeatures.PAYMENT_SECRET_OPT | LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ | LnFeatures.VAR_ONION_OPT
+        f1 = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT | LnFeatures.VAR_SPERO_OPT
+        f2 = LnFeatures.PAYMENT_SECRET_OPT | LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ | LnFeatures.VAR_SPERO_OPT
         self.assertEqual(LnFeatures.PAYMENT_SECRET_OPT |
                          LnFeatures.PAYMENT_SECRET_REQ |
                          LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT |
-                         LnFeatures.VAR_ONION_OPT,
+                         LnFeatures.VAR_SPERO_OPT,
                          ln_compare_features(f1, f2))
         self.assertEqual(LnFeatures.PAYMENT_SECRET_OPT |
                          LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT |
                          LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ |
-                         LnFeatures.VAR_ONION_OPT,
+                         LnFeatures.VAR_SPERO_OPT,
                          ln_compare_features(f2, f1))
 
     def test_ln_features_supports(self):
@@ -865,7 +865,7 @@ class TestLNUtil(ElectrumTestCase):
             f_opt.supports(f_optreq)
         with self.assertRaises(ValueError):
             f_optreq.supports(f_optreq)
-        f1 = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT | LnFeatures.VAR_ONION_OPT
+        f1 = LnFeatures.BASIC_MPP_OPT | LnFeatures.PAYMENT_SECRET_REQ | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT | LnFeatures.VAR_SPERO_OPT
         self.assertTrue(f1.supports(LnFeatures.PAYMENT_SECRET_OPT))
         self.assertTrue(f1.supports(LnFeatures.BASIC_MPP_REQ))
         self.assertFalse(f1.supports(LnFeatures.OPTION_STATIC_REMOTEKEY_OPT))

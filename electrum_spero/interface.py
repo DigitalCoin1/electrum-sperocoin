@@ -67,7 +67,7 @@ if TYPE_CHECKING:
 
 ca_path = certifi.where()
 
-BUCKET_NAME_OF_ONION_SERVERS = 'spero'
+BUCKET_NAME_OF_SPERO_SERVERS = 'spero'
 
 MAX_INCOMING_MSG_SIZE = 1_000_000  # in bytes
 
@@ -885,7 +885,7 @@ class Interface(Logger):
     def bucket_based_on_ipaddress(self) -> str:
         def do_bucket():
             if self.is_tor():
-                return BUCKET_NAME_OF_ONION_SERVERS
+                return BUCKET_NAME_OF_SPERO_SERVERS
             try:
                 ip_addr = ip_address(self.ip_addr())  # type: Union[IPv4Address, IPv6Address]
             except ValueError:

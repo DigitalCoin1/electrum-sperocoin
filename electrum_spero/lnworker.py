@@ -151,7 +151,7 @@ class ErrorAddingPeer(Exception): pass
 BASE_FEATURES = LnFeatures(0)\
     | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT\
     | LnFeatures.OPTION_STATIC_REMOTEKEY_OPT\
-    | LnFeatures.VAR_ONION_OPT\
+    | LnFeatures.VAR_SPERO_OPT\
     | LnFeatures.PAYMENT_SECRET_OPT\
     | LnFeatures.OPTION_UPFRONT_SHUTDOWN_SCRIPT_OPT
 
@@ -1443,7 +1443,7 @@ class LNWallet(LNWorker):
         # its capacity. This could be dealt with by temporarily
         # iteratively blacklisting channels for this mpp attempt.
         invoice_features = LnFeatures(invoice_features)
-        trampoline_features = LnFeatures.VAR_ONION_OPT
+        trampoline_features = LnFeatures.VAR_SPERO_OPT
         local_height = self.network.get_local_height()
         active_channels = [chan for chan in self.channels.values() if chan.is_active() and not chan.is_frozen_for_sending()]
         try:

@@ -1338,7 +1338,7 @@ class Peer(Logger):
         failure_code = payload["failure_code"]
         self.logger.info(f"on_update_fail_malformed_htlc. chan {chan.get_id_for_log()}. "
                          f"htlc_id {htlc_id}. failure_code={failure_code}")
-        if failure_code & SperoFailureCodeMetaFlag.BADONION == 0:
+        if failure_code & SperoFailureCodeMetaFlag.BADSPERO == 0:
             asyncio.ensure_future(self.lnworker.try_force_closing(chan.channel_id))
             raise RemoteMisbehaving(f"received update_fail_malformed_htlc with unexpected failure code: {failure_code}")
         reason = SperoRoutingFailure(code=failure_code, data=payload["sha256_of_spero"])
@@ -1387,7 +1387,7 @@ class Peer(Logger):
         try:
             next_chan_scid = processed_spero.hop_data.payload["short_channel_id"]["short_channel_id"]
         except:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
         next_chan = self.lnworker.get_channel_by_short_id(next_chan_scid)
         local_height = chain.height()
         if next_chan is None:
@@ -1403,14 +1403,14 @@ class Peer(Logger):
         try:
             next_amount_msat_htlc = processed_spero.hop_data.payload["amt_to_forward"]["amt_to_forward"]
         except:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
         if not next_chan.can_pay(next_amount_msat_htlc):
             self.logger.info(f"cannot forward htlc due to transient errors (likely due to insufficient funds)")
             raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
         try:
             next_cltv_expiry = processed_spero.hop_data.payload["outgoing_cltv_value"]["outgoing_cltv_value"]
         except:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
         if htlc.cltv_expiry - next_cltv_expiry < next_chan.forwarding_cltv_expiry_delta:
             data = htlc.cltv_expiry.to_bytes(4, byteorder="big") + outgoing_chan_upd_message
             raise SperoRoutingFailure(code=SperoFailureCode.INCORRECT_CLTV_EXPIRY, data=data)
@@ -1473,7 +1473,7 @@ class Peer(Logger):
                 next_trampoline_spero = trampoline_spero.next_packet
         except Exception as e:
             self.logger.exception('')
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
 
         # these are the fee/cltv paid by the sender
         # pay_to_node will raise if they are not sufficient
@@ -1523,7 +1523,7 @@ class Peer(Logger):
             amt_to_forward = processed_spero.hop_data.payload["amt_to_forward"]["amt_to_forward"]
         except:
             log_fail_reason(f"'amt_to_forward' missing from spero")
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
 
         # Check that our blockchain tip is sufficiently recent so that we have an approx idea of the height.
         # We should not release the preimage for an HTLC that its sender could already time out as
@@ -1543,7 +1543,7 @@ class Peer(Logger):
             cltv_from_spero = processed_spero.hop_data.payload["outgoing_cltv_value"]["outgoing_cltv_value"]
         except:
             log_fail_reason(f"'outgoing_cltv_value' missing from spero")
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
 
         if not is_trampoline:
             if cltv_from_spero != htlc.cltv_expiry:
@@ -1632,7 +1632,7 @@ class Peer(Logger):
     def fail_malformed_htlc(self, *, chan: Channel, htlc_id: int, reason: SperoRoutingFailure):
         self.logger.info(f"fail_malformed_htlc. chan {chan.short_channel_id}. htlc_id {htlc_id}.")
         assert chan.can_send_ctx_updates(), f"cannot send updates: {chan.short_channel_id}"
-        if not (reason.code & SperoFailureCodeMetaFlag.BADONION and len(reason.data) == 32):
+        if not (reason.code & SperoFailureCodeMetaFlag.BADSPERO and len(reason.data) == 32):
             raise Exception(f"unexpected reason when sending 'update_fail_malformed_htlc': {reason!r}")
         self.received_htlcs_pending_removal.add((chan, htlc_id))
         chan.fail_htlc(htlc_id)
@@ -2019,16 +2019,16 @@ class Peer(Logger):
                 our_spero_private_key=self.privkey,
                 is_trampoline=is_trampoline)
         except UnsupportedSperoPacketVersion:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_VERSION, data=failure_data)
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_VERSION, data=failure_data)
         except InvalidSperoPubkey:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_KEY, data=failure_data)
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_KEY, data=failure_data)
         except InvalidSperoMac:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_HMAC, data=failure_data)
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_HMAC, data=failure_data)
         except Exception as e:
             self.logger.info(f"error processing spero packet: {e!r}")
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_VERSION, data=failure_data)
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_VERSION, data=failure_data)
         if self.network.config.get('test_fail_malformed_htlc'):
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_ONION_VERSION, data=failure_data)
+            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_VERSION, data=failure_data)
         if self.network.config.get('test_fail_htlcs_with_temp_node_failure'):
             raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
         return processed_spero

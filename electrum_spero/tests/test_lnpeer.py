@@ -133,7 +133,7 @@ class MockLNWallet(Logger, NetworkRetryManager[LNPeerAddr]):
         self.features = LnFeatures(0)
         self.features |= LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT
         self.features |= LnFeatures.OPTION_UPFRONT_SHUTDOWN_SCRIPT_OPT
-        self.features |= LnFeatures.VAR_ONION_OPT
+        self.features |= LnFeatures.VAR_SPERO_OPT
         self.features |= LnFeatures.PAYMENT_SECRET_OPT
         self.features |= LnFeatures.OPTION_TRAMPOLINE_ROUTING_OPT
         self.pending_payments = defaultdict(asyncio.Future)

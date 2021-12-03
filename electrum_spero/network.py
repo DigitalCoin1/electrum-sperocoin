@@ -56,7 +56,7 @@ from . import dns_hacks
 from .transaction import Transaction
 from .blockchain import Blockchain, HEADER_SIZE
 from .interface import (Interface, PREFERRED_NETWORK_PROTOCOL,
-                        RequestTimedOut, NetworkTimeout, BUCKET_NAME_OF_ONION_SERVERS,
+                        RequestTimedOut, NetworkTimeout, BUCKET_NAME_OF_SPERO_SERVERS,
                         NetworkException, RequestCorrupted, ServerAddr)
 from .version import PROTOCOL_VERSION
 from .simple_config import SimpleConfig
@@ -820,7 +820,7 @@ class Network(Logger, NetworkRetryManager[ServerAddr]):
         for iface in interfaces:
             buckets[iface.bucket_based_on_ipaddress()].append(iface)
         # check proposed server against buckets
-        spero_servers = buckets[BUCKET_NAME_OF_ONION_SERVERS]
+        spero_servers = buckets[BUCKET_NAME_OF_SPERO_SERVERS]
         if iface_to_check.is_tor():
             # keep number of spero servers below half of all connected servers
             if len(spero_servers) > NUM_TARGET_CONNECTED_SERVERS // 2:

@@ -930,10 +930,10 @@ class LnFeatures(IntFlag):
     _ln_feature_contexts[GOSSIP_QUERIES_OPT] = (LNFC.INIT | LNFC.NODE_ANN)
     _ln_feature_contexts[GOSSIP_QUERIES_REQ] = (LNFC.INIT | LNFC.NODE_ANN)
 
-    VAR_ONION_REQ = 1 << 8
-    VAR_ONION_OPT = 1 << 9
-    _ln_feature_contexts[VAR_ONION_OPT] = (LNFC.INIT | LNFC.NODE_ANN | LNFC.INVOICE)
-    _ln_feature_contexts[VAR_ONION_REQ] = (LNFC.INIT | LNFC.NODE_ANN | LNFC.INVOICE)
+    VAR_SPERO_REQ = 1 << 8
+    VAR_SPERO_OPT = 1 << 9
+    _ln_feature_contexts[VAR_SPERO_OPT] = (LNFC.INIT | LNFC.NODE_ANN | LNFC.INVOICE)
+    _ln_feature_contexts[VAR_SPERO_REQ] = (LNFC.INIT | LNFC.NODE_ANN | LNFC.INVOICE)
 
     GOSSIP_QUERIES_EX_REQ = 1 << 10
     GOSSIP_QUERIES_EX_OPT = 1 << 11
@@ -948,7 +948,7 @@ class LnFeatures(IntFlag):
 
     PAYMENT_SECRET_REQ = 1 << 14
     PAYMENT_SECRET_OPT = 1 << 15
-    _ln_feature_direct_dependencies[PAYMENT_SECRET_OPT] = {VAR_ONION_OPT}
+    _ln_feature_direct_dependencies[PAYMENT_SECRET_OPT] = {VAR_SPERO_OPT}
     _ln_feature_contexts[PAYMENT_SECRET_OPT] = (LNFC.INIT | LNFC.NODE_ANN | LNFC.INVOICE)
     _ln_feature_contexts[PAYMENT_SECRET_REQ] = (LNFC.INIT | LNFC.NODE_ANN | LNFC.INVOICE)
 
@@ -1030,9 +1030,9 @@ class LnFeatures(IntFlag):
 
         Helper function that tries to hide the complexity of even/odd bits.
         For example, instead of:
-          bool(myfeatures & LnFeatures.VAR_ONION_OPT or myfeatures & LnFeatures.VAR_ONION_REQ)
+          bool(myfeatures & LnFeatures.VAR_SPERO_OPT or myfeatures & LnFeatures.VAR_SPERO_REQ)
         you can do:
-          myfeatures.supports(LnFeatures.VAR_ONION_OPT)
+          myfeatures.supports(LnFeatures.VAR_SPERO_OPT)
         """
         enabled_bits = list_enabled_bits(feature)
         if len(enabled_bits) != 1:
@@ -1053,7 +1053,7 @@ LN_FEATURES_IMPLEMENTED = (
         | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT | LnFeatures.OPTION_DATA_LOSS_PROTECT_REQ
         | LnFeatures.GOSSIP_QUERIES_OPT | LnFeatures.GOSSIP_QUERIES_REQ
         | LnFeatures.OPTION_STATIC_REMOTEKEY_OPT | LnFeatures.OPTION_STATIC_REMOTEKEY_REQ
-        | LnFeatures.VAR_ONION_OPT | LnFeatures.VAR_ONION_REQ
+        | LnFeatures.VAR_SPERO_OPT | LnFeatures.VAR_SPERO_REQ
         | LnFeatures.PAYMENT_SECRET_OPT | LnFeatures.PAYMENT_SECRET_REQ
         | LnFeatures.BASIC_MPP_OPT | LnFeatures.BASIC_MPP_REQ
         | LnFeatures.OPTION_TRAMPOLINE_ROUTING_OPT | LnFeatures.OPTION_TRAMPOLINE_ROUTING_REQ
@@ -1354,7 +1354,7 @@ class UpdateAddHtlc:
 
 
 class SperoFailureCodeMetaFlag(IntFlag):
-    BADONION = 0x8000
+    BADSPERO = 0x8000
     PERM     = 0x4000
     NODE     = 0x2000
     UPDATE   = 0x1000

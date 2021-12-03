@@ -510,7 +510,7 @@ def get_failure_msg_from_spero_error(decrypted_error_packet: bytes) -> SperoRout
 
 
 # TODO maybe we should rm this and just use SperoWireSerializer and spero_wire.csv
-BADONION = SperoFailureCodeMetaFlag.BADONION
+BADSPERO = SperoFailureCodeMetaFlag.BADSPERO
 PERM     = SperoFailureCodeMetaFlag.PERM
 NODE     = SperoFailureCodeMetaFlag.NODE
 UPDATE   = SperoFailureCodeMetaFlag.UPDATE
@@ -519,9 +519,9 @@ class SperoFailureCode(IntEnum):
     TEMPORARY_NODE_FAILURE =                  NODE | 2
     PERMANENT_NODE_FAILURE =                  PERM | NODE | 2
     REQUIRED_NODE_FEATURE_MISSING =           PERM | NODE | 3
-    INVALID_ONION_VERSION =                   BADONION | PERM | 4
-    INVALID_ONION_HMAC =                      BADONION | PERM | 5
-    INVALID_ONION_KEY =                       BADONION | PERM | 6
+    INVALID_SPERO_VERSION =                   BADSPERO | PERM | 4
+    INVALID_SPERO_HMAC =                      BADSPERO | PERM | 5
+    INVALID_SPERO_KEY =                       BADSPERO | PERM | 6
     TEMPORARY_CHANNEL_FAILURE =               UPDATE | 7
     PERMANENT_CHANNEL_FAILURE =               PERM | 8
     REQUIRED_CHANNEL_FEATURE_MISSING =        PERM | 9
@@ -537,11 +537,11 @@ class SperoFailureCode(IntEnum):
     FINAL_INCORRECT_HTLC_AMOUNT =             19
     CHANNEL_DISABLED =                        UPDATE | 20
     EXPIRY_TOO_FAR =                          21
-    INVALID_ONION_PAYLOAD =                   PERM | 22
+    INVALID_SPERO_PAYLOAD =                   PERM | 22
     MPP_TIMEOUT =                             23
     TRAMPOLINE_FEE_INSUFFICIENT =             NODE | 51
     TRAMPOLINE_EXPIRY_TOO_SOON =              NODE | 52
 
 
 # don't use these elsewhere, the names are ambiguous without context
-del BADONION; del PERM; del NODE; del UPDATE
+del BADSPERO; del PERM; del NODE; del UPDATE

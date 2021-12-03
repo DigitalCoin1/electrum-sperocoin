@@ -124,7 +124,7 @@ def create_trampoline_route(
                 trampoline2 = node_id
                 break
     # node_features is only used to determine is_tlv
-    trampoline_features = LnFeatures.VAR_ONION_OPT
+    trampoline_features = LnFeatures.VAR_SPERO_OPT
     # hop to trampoline
     route = []
     # trampoline hop
