@@ -136,7 +136,7 @@ info "installing electrum and its dependencies."
 "$python" -m pip install --no-dependencies --no-binary :all: --no-warn-script-location \
     --cache-dir "$PIP_CACHE_DIR" -r "$CONTRIB/deterministic-build/requirements-hw.txt"
 "$python" -m pip install --no-dependencies --no-binary :all: --no-warn-script-location \
-    --cache-dir "$PIP_CACHE_DIR" sperocoin-x13-hash==1.0.4
+    --cache-dir "$PIP_CACHE_DIR" sperocoin-x13-hash==1.0.5
 "$python" -m pip install --no-dependencies --no-warn-script-location \
     --cache-dir "$PIP_CACHE_DIR" "$PROJECT_ROOT"
 

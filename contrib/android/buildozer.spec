@@ -47,7 +47,7 @@ requirements =
     libffi,
     libsecp256k1,
     cryptography,
-    sperocoin-x13-hash==1.0.4
+    sperocoin-x13-hash==1.0.5
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/gui/kivy/theming/splash.png
