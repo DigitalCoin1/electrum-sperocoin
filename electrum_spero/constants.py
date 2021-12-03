@@ -40,8 +40,8 @@ def read_json(filename, default):
     return r
 
 
-GIT_REPO_URL = "https://github.com/thohemp/electrum-spero"
-GIT_REPO_ISSUES_URL = "https://github.com/thohemp/electrum-spero/issues"
+GIT_REPO_URL = "https://github.com/DigitalCoin1/electrum-spero"
+GIT_REPO_ISSUES_URL = "https://github.com/DigitalCoin1/electrum-spero/issues"
 BIP39_WALLET_FORMATS = read_json('bip39_wallet_formats.json', [])
 
 
@@ -51,7 +51,7 @@ class AbstractNet:
 
     @classmethod
     def max_checkpoint(cls) -> int:
-        return max(0, len(cls.CHECKPOINTS) * 2016- 1)
+        return max(0, len(cls.CHECKPOINTS) * 240- 1)
 
     @classmethod
     def rev_genesis_bytes(cls) -> bytes:
@@ -62,11 +62,11 @@ class BitcoinMainnet(AbstractNet):
 
     TESTNET = False
     WIF_PREFIX = 0x80
-    ADDRTYPE_P2PKH = 31
-    ADDRTYPE_P2SH = 78
-    SEGWIT_HRP = "dpn"
-    GENESIS = "000004e29458ef4f2e0abab544737b07344e6ff13718f7c2d12926166db07b5e"
-    DEFAULT_PORTS = {'t': '50001', 's': '50002'}
+    ADDRTYPE_P2PKH = 63
+    ADDRTYPE_P2SH = 5
+    SEGWIT_HRP = "spr"
+    GENESIS = "000006f4925ed7b889f847f24621390d4943466f091c3254ca1bd8becc517f7b"
+    DEFAULT_PORTS = {'t': '81', 's': '82'}
     DEFAULT_SERVERS = read_json('servers.json', {})
     CHECKPOINTS = read_json('checkpoints.json', [])
     #BLOCK_HEIGHT_FIRST_LIGHTNING_CHANNELS = 497000

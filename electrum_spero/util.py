@@ -75,11 +75,11 @@ def inv_dict(d):
 ca_path = certifi.where()
 
 
-base_units = {'ONION':8, 'mONION':5, 'uONION':2, 'sat':0}
+base_units = {'SPERO':8, 'mSPERO':5, 'uSPERO':2, 'sat':0}
 base_units_inverse = inv_dict(base_units)
-base_units_list = ['ONION', 'mONION', 'uONION', 'sat']  # list(dict) does not guarantee order
+base_units_list = ['SPERO', 'mSPERO', 'uSPERO', 'sat']  # list(dict) does not guarantee order
 
-DECIMAL_POINT_DEFAULT = 8  # ONION
+DECIMAL_POINT_DEFAULT = 8  # SPERO
 
 
 class UnknownBaseUnit(Exception): pass
@@ -747,7 +747,7 @@ def time_difference(distance_in_time, include_seconds):
         return "over %d years" % (round(distance_in_minutes / 525600))
 
 mainnet_block_explorers = {
-    'explorer.SperoCoin.org': ('https://explorer.SperoCoin.org/',
+    'explorer.sperocoin.org': ('https://explorer.sperocoin.org/',
                         {'tx': 'tx/', 'addr': 'address/'}),
 }
 
