@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/thohemp/electrum-spero.svg?branch=master)](https://travis-ci.com/thohemp/electrum-spero)
+[![Build Status](https://travis-ci.com/DigitalCoin1/electrum-spero.svg?branch=master)](https://travis-ci.com/DigitalCoin1/electrum-spero)
 
 electrum-spero - Lightweight SperoCoin client
 ==========================================
@@ -82,7 +82,7 @@ Development version (git clone)
 
 Check out the code from GitHub::
 
-    git clone git://github.com/thohemp/electrum-spero.git
+    git clone git://github.com/DigitalCoin1/electrum-spero.git
     cd electrum-spero
     git submodule update --init
 
