@@ -1254,7 +1254,7 @@ command_options = {
     'nocheck':     (None, "Do not verify aliases"),
     'imax':        (None, "Maximum number of inputs"),
     'fee':         ("-f", "Transaction fee (absolute, in SPERO)"),
-    'feerate':     (None, "Transaction fee rate (in oni/byte)"),
+    'feerate':     (None, "Transaction fee rate (in spr/byte)"),
     'from_addr':   ("-F", "Source address (must be a wallet address; use sweep to spend from non-wallet address)."),
     'from_coins':  (None, "Source coins (must be in wallet; use sweep to spend from non-wallet address)."),
     'change_addr': ("-c", "Change address. Default is a spare address, or the source address if it's not in the wallet"),

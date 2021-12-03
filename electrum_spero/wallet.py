@@ -1190,7 +1190,7 @@ class Abstract_Wallet(AddressSynchronizer, ABC):
             if fee is not None:
                 size = tx.estimated_size()
                 fee_per_byte = fee / size
-                extra.append(format_fee_satoshis(fee_per_byte) + ' oni/b')
+                extra.append(format_fee_satoshis(fee_per_byte) + ' spr/b')
             if fee is not None and height in (TX_HEIGHT_UNCONF_PARENT, TX_HEIGHT_UNCONFIRMED) \
                and self.config.has_fee_mempool():
                 exp_n = self.config.fee_to_depth(fee_per_byte)
@@ -1542,7 +1542,7 @@ class Abstract_Wallet(AddressSynchronizer, ABC):
             strategies: Sequence[BumpFeeStrategy] = None,
     ) -> PartialTransaction:
         """Increase the miner fee of 'tx'.
-        'new_fee_rate' is the target min rate in oni/vbyte
+        'new_fee_rate' is the target min rate in spr/vbyte
         'coins' is a list of UTXOs we can choose from as potential new inputs to be added
         """
         txid = txid or tx.txid()
@@ -2584,7 +2584,7 @@ class Abstract_Wallet(AddressSynchronizer, ABC):
         elif feerate > FEERATE_WARNING_HIGH_FEE / 1000:
             long_warning = (
                     _('Warning') + ': ' + _("The fee for this transaction seems unusually high.")
-                    + f' (feerate: {feerate:.2f} oni/byte)')
+                    + f' (feerate: {feerate:.2f} spr/byte)')
             short_warning = _("high fee rate") + "!"
         if long_warning is None:
             return None
