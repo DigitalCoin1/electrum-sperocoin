@@ -7,7 +7,7 @@ electrum-spero is a port of Electrum, the Bitcoin wallet, to SperoCoin.
 
     Licence: MIT Licence
     Original Author: Thomas Voegtlin
-    Port Maintainer: thohemp
+    Port Maintainer: DigitalCoinBRL Ativos Digitais
     Language: Python (>= 3.6)
     Homepage: https://sperocoin.org/
 

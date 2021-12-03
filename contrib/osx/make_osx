@@ -4,7 +4,7 @@
 PYTHON_VERSION=3.7.9
 BUILDDIR=/tmp/electrum-spero-build
 PACKAGE=electrum-spero
-GIT_REPO=https://github.com/pooler/electrum-spero
+GIT_REPO=https://github.com/DigitalCoin1/electrum-spero
 
 export GCC_STRIP_BINARIES="1"
 
