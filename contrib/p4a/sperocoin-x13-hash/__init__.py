@@ -3,9 +3,9 @@ from pythonforandroid.recipe import CythonRecipe
 
 class X13HashRecipe(CythonRecipe):
 
-    url = ('https://files.pythonhosted.org/packages/78/d1/dfd9b0f2b095787ce6da6876199e71681773cfab22321e63174e05919b6c/sperocoin-x13-hash-{version}.tar.gz')
-    md5sum = '08c55917bc73a3552d332c1bd11e0b0a'
-    version = '1.0.4'
+    url = ('https://files.pythonhosted.org/packages/63/f9/e102598fe45590ac7fab8bc0b473b1ebdb794fd580a227a497f1c6fb4f3f/sperocoin-x13-hash-{version}.tar.gz')
+    md5sum = '4ca8356bb24f76f0c369bca64219626c'
+    version = '1.0.5'
     depends = ['python3', 'setuptools']
     call_hostpython_via_targetpython = False
 
