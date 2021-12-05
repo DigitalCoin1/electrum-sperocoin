@@ -24,10 +24,17 @@ make theming
 if [[ -n "$1"  && "$1" == "release" ]] ; then
     echo -n Keystore Password:
     read -s password
-    export P4A_RELEASE_KEYSTORE=~/.keystore
+    export P4A_RELEASE_KEYSTORE=~/.keystore/electrum_spero.keystore
     export P4A_RELEASE_KEYSTORE_PASSWD=$password
     export P4A_RELEASE_KEYALIAS_PASSWD=$password
     export P4A_RELEASE_KEYALIAS=electrum_spero
+    # build two apks
+    export APP_ANDROID_ARCH=armeabi-v7a
+    make release
+    export APP_ANDROID_ARCH=arm64-v8a
+    make release
+elif [[ -n "$1"  && "$1" == "release-unsigned" ]] ; then
+    # do release build, but do not sign the APKs.
     # build two apks
     export APP_ANDROID_ARCH=armeabi-v7a
     make release
@@ -49,8 +56,8 @@ else
     # only build one apk for debug build, for faster testing iterations
     export APP_ANDROID_ARCH=arm64-v8a
     make apk
-    # export APP_ANDROID_ARCH=armeabi-v7a
-    # make apk
+    export APP_ANDROID_ARCH=armeabi-v7a
+    make apk
 fi
 
 popd

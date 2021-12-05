@@ -47,7 +47,7 @@ requirements =
     libffi,
     libsecp256k1,
     cryptography,
-    sperocoin-x13-hash==1.0.5
+    sperocoin-x13-hash==1.0.6
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/gui/kivy/theming/splash.png
@@ -191,7 +191,7 @@ p4a.local_recipes = %(source.dir)s/contrib/p4a
 [buildozer]
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
-log_level = 1
+log_level = 2
 
 
 # -----------------------------------------------------------------------------

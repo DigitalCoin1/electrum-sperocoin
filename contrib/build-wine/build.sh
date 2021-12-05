@@ -54,15 +54,15 @@ else
 fi
 
 info "Downloading x13 lib"
-X13_HASH_PATH=https://github.com/DigitalCoin1/sperocoin-x13-hash/releases/download/1.0.5/
+X13_HASH_PATH=https://github.com/DigitalCoin1/sperocoin-x13-hash/releases/download/1.0.6/
 X13_HASH_FILE=
 if [ "$WIN_ARCH" = "win32" ] ; then
-    X13_HASH_FILE=sperocoin-x13-hash-1.0.5-win32.zip
+    X13_HASH_FILE=sperocoin-x13-hash-1.0.6-win32.zip
 else 
-    X13_HASH_FILE=sperocoin-x13-hash-1.0.5-win64.zip
+    X13_HASH_FILE=sperocoin-x13-hash-1.0.6-win64.zip
 fi
 
-X13_HASH_SHA=0a816a1710ad9abfec26cb388d3ace11da804e2873782c2aed7834e1bfb592df
+X13_HASH_SHA=7e72c26dcd04a8ac62964ba491b4fd7658ed3b32d5ff50632054f752a16161f0
 wget ${X13_HASH_PATH}/${X13_HASH_FILE}
 echo "$X13_HASH_SHA  $X13_HASH_FILE" > sha256.txt
 shasum -a256 -s -c sha256.txt

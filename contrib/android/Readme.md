@@ -111,10 +111,30 @@ If you just follow the instructions above, you will build the apk
 in debug mode. The most notable difference is that the apk will be
 signed using a debug keystore. If you are planning to upload
 what you build to e.g. the Play Store, you should create your own
-keystore, back it up safely, and run `./contrib/make_apk release`.
+keystore, back it up safely, and run `./contrib/android/make_apk release`.
 
 See e.g. [kivy wiki](https://github.com/kivy/kivy/wiki/Creating-a-Release-APK)
 and [android dev docs](https://developer.android.com/studio/build/building-cmdline#sign_cmdline).
+
+## Build Signed Application
+To build a signed application, create a new keystore by entering a password twice and entering the requested information.
+```
+$ mkdir ~/.keystore
+$ cd ~/.keystore
+$ sudo keytool -genkey -v -keystore electrum_spero.keystore -alias electrum_spero -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Compile the application:
+```
+sudo docker run -it --rm \
+        --name electrum-android-builder-cont \
+        -v $PWD:/home/user/wspace/electrum \
+        -v $PWD/.buildozer/.gradle:/home/user/.gradle \
+        -v ~/.keystore:/home/user/.keystore \
+        --workdir /home/user/wspace/electrum \
+        electrum-android-builder-img \
+        ./contrib/android/make_apk release
+```
 
 ### Access datadir on Android from desktop (e.g. to copy wallet file)
 Note that this only works for debug builds! Otherwise the security model
