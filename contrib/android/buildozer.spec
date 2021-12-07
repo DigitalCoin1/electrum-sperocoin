@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = electrum-spero
+title = SperoCoin Electrum
 
 # (str) Package name
 package.name = electrum_spero
