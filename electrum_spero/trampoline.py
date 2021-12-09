@@ -4,7 +4,7 @@ import random
 
 from .logging import get_logger, Logger
 from .lnutil import LnFeatures
-from .lnspero import calc_hops_data_for_payment, new_spero_packet
+from .lnonion import calc_hops_data_for_payment, new_onion_packet
 from .lnrouter import RouteEdge, TrampolineEdge, LNPaymentRoute, is_route_sane_to_use
 from .lnutil import NoPathFound, LNPeerAddr
 from . import constants
@@ -124,7 +124,7 @@ def create_trampoline_route(
                 trampoline2 = node_id
                 break
     # node_features is only used to determine is_tlv
-    trampoline_features = LnFeatures.VAR_SPERO_OPT
+    trampoline_features = LnFeatures.VAR_ONION_OPT
     # hop to trampoline
     route = []
     # trampoline hop
@@ -192,7 +192,7 @@ def create_trampoline_route(
     return route
 
 
-def create_trampoline_spero(*, route, amount_msat, final_cltv, total_msat, payment_hash, payment_secret):
+def create_trampoline_onion(*, route, amount_msat, final_cltv, total_msat, payment_hash, payment_secret):
     # all edges are trampoline
     hops_data, amount_msat, cltv = calc_hops_data_for_payment(
         route,
@@ -228,11 +228,11 @@ def create_trampoline_spero(*, route, amount_msat, final_cltv, total_msat, payme
             }
         _logger.info(f'payload {i} {payload}')
     trampoline_session_key = os.urandom(32)
-    trampoline_spero = new_spero_packet(payment_path_pubkeys, trampoline_session_key, hops_data, associated_data=payment_hash, trampoline=True)
-    return trampoline_spero, amount_msat, cltv
+    trampoline_onion = new_onion_packet(payment_path_pubkeys, trampoline_session_key, hops_data, associated_data=payment_hash, trampoline=True)
+    return trampoline_onion, amount_msat, cltv
 
 
-def create_trampoline_route_and_spero(
+def create_trampoline_route_and_onion(
         *,
         amount_msat,
         total_msat,
@@ -247,7 +247,7 @@ def create_trampoline_route_and_spero(
         local_height:int,
         trampoline_fee_level: int,
         use_two_trampolines: bool):
-    # create route for the trampoline_spero
+    # create route for the trampoline_onion
     trampoline_route = create_trampoline_route(
         amount_msat=amount_msat,
         min_cltv_expiry=min_cltv_expiry,
@@ -258,9 +258,9 @@ def create_trampoline_route_and_spero(
         r_tags=r_tags,
         trampoline_fee_level=trampoline_fee_level,
         use_two_trampolines=use_two_trampolines)
-    # compute spero and fees
+    # compute onion and fees
     final_cltv = local_height + min_cltv_expiry
-    trampoline_spero, amount_with_fees, bucket_cltv = create_trampoline_spero(
+    trampoline_onion, amount_with_fees, bucket_cltv = create_trampoline_onion(
         route=trampoline_route,
         amount_msat=amount_msat,
         final_cltv=final_cltv,
@@ -272,4 +272,4 @@ def create_trampoline_route_and_spero(
     # trampoline fee for this very trampoline
     trampoline_fee = trampoline_route[0].fee_for_edge(amount_with_fees)
     amount_with_fees += trampoline_fee
-    return trampoline_spero, amount_with_fees, bucket_cltv_delta
+    return trampoline_onion, amount_with_fees, bucket_cltv_delta

@@ -30,7 +30,7 @@ class HTLCManager:
             log['unacked_local_updates2'] = {}
 
         if 'unfulfilled_htlcs' not in log:
-            log['unfulfilled_htlcs'] = {}  # htlc_id -> spero_packet
+            log['unfulfilled_htlcs'] = {}  # htlc_id -> onion_packet
         if 'fail_htlc_reasons' not in log:
             log['fail_htlc_reasons'] = {}  # htlc_id -> error_bytes, failure_message
 

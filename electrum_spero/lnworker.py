@@ -65,7 +65,7 @@ from .lnutil import (Outpoint, LNPeerAddr,
 from .lnutil import ln_dummy_address, ln_compare_features, IncompatibleLightningFeatures
 from .lnrouter import TrampolineEdge
 from .transaction import PartialTxOutput, PartialTransaction, PartialTxInput
-from .lnspero import SperoFailureCode, SperoRoutingFailure
+from .lnonion import OnionFailureCode, OnionRoutingFailure
 from .lnmsg import decode_msg
 from .i18n import _
 from .lnrouter import (RouteEdge, LNPaymentRoute, LNPaymentPath, is_route_sane_to_use,
@@ -81,7 +81,7 @@ from .channel_db import get_mychannel_info, get_mychannel_policy
 from .submarine_swaps import SwapManager
 from .channel_db import ChannelInfo, Policy
 from .mpp_split import suggest_splits
-from .trampoline import create_trampoline_route_and_spero, TRAMPOLINE_FEES
+from .trampoline import create_trampoline_route_and_onion, TRAMPOLINE_FEES
 
 if TYPE_CHECKING:
     from .network import Network
@@ -116,9 +116,9 @@ FALLBACK_NODE_LIST_MAINNET = [
     LNPeerAddr(host='54.157.91.178', port=9735, pubkey=bfh('02e2fc5f8c8a1003131f9a182f7bec328bd8b877c13a9c318851e49a737137195c')),
     LNPeerAddr(host='213.136.92.251', port=9735, pubkey=bfh('02e6e00d443531e8fea1e119db8eecc89ce043e26bc8f1002d26fb936d315b1127')),
     LNPeerAddr(host='89.245.95.112', port=9736, pubkey=bfh('02ea29f01498acaa8f71c50459e5d7efa76a4f515c45121f05ae389643b14dec1b')),
-    LNPeerAddr(host='z75k6k5zeznj6j63.spero', port=9735, pubkey=bfh('02fadef5a8a223d2bd693c50ff64deceb7e09938f0695080771c21ec802190f011')),
+    LNPeerAddr(host='z75k6k5zeznj6j63.onion', port=9735, pubkey=bfh('02fadef5a8a223d2bd693c50ff64deceb7e09938f0695080771c21ec802190f011')),
     LNPeerAddr(host='92.53.89.123', port=9736, pubkey=bfh('035a6532c0e996f2fb9db3e96759148c4a13cf3d802a33f91ae5d4319be3d4686b')),
-    LNPeerAddr(host='goojs5mqqnxtvlb2.spero', port=9735, pubkey=bfh('035f28ec90cdcfb428f96486aeb2437d0cc49812b92595d51ccbf5ecf7dea7f9d9')),
+    LNPeerAddr(host='goojs5mqqnxtvlb2.onion', port=9735, pubkey=bfh('035f28ec90cdcfb428f96486aeb2437d0cc49812b92595d51ccbf5ecf7dea7f9d9')),
     LNPeerAddr(host='170.75.162.173', port=9736, pubkey=bfh('036f4aa2256e52b9e1d93a4a04ceccfbc895c43b522287040a47899d20cea9c7f3')),
     LNPeerAddr(host='155.138.140.93', port=9735, pubkey=bfh('0371542b7780cf69220924a16ce5a0554b7128ad96a9dc8955879ca23a35f7111e')),
     LNPeerAddr(host='70.63.170.86', port=9735, pubkey=bfh('0371be28c68cb78b8f4be20e81458809ce89f3f77270efab80e08ee113e5651381')),
@@ -151,7 +151,7 @@ class ErrorAddingPeer(Exception): pass
 BASE_FEATURES = LnFeatures(0)\
     | LnFeatures.OPTION_DATA_LOSS_PROTECT_OPT\
     | LnFeatures.OPTION_STATIC_REMOTEKEY_OPT\
-    | LnFeatures.VAR_SPERO_OPT\
+    | LnFeatures.VAR_ONION_OPT\
     | LnFeatures.PAYMENT_SECRET_OPT\
     | LnFeatures.OPTION_UPFRONT_SHUTDOWN_SCRIPT_OPT
 
@@ -451,7 +451,7 @@ class LNWorker(Logger, NetworkRetryManager[LNPeerAddr]):
             if is_ip_address(host):
                 return host, port, timestamp
         # otherwise choose one at random
-        # TODO maybe filter out spero if not on tor?
+        # TODO maybe filter out onion if not on tor?
         choice = random.choice(addr_list)
         return choice
 
@@ -1136,16 +1136,16 @@ class LNWallet(LNWorker):
             invoice_features: int,
             attempts: int = 1,
             full_path: LNPaymentPath = None,
-            fwd_trampoline_spero=None,
+            fwd_trampoline_onion=None,
             fwd_trampoline_fee=None,
             fwd_trampoline_cltv_delta=None) -> None:
 
-        if fwd_trampoline_spero:
+        if fwd_trampoline_onion:
             # todo: compare to the fee of the actual route we found
             if fwd_trampoline_fee < 1000:
-                raise SperoRoutingFailure(code=SperoFailureCode.TRAMPOLINE_FEE_INSUFFICIENT, data=b'')
+                raise OnionRoutingFailure(code=OnionFailureCode.TRAMPOLINE_FEE_INSUFFICIENT, data=b'')
             if fwd_trampoline_cltv_delta < 576:
-                raise SperoRoutingFailure(code=SperoFailureCode.TRAMPOLINE_EXPIRY_TOO_SOON, data=b'')
+                raise OnionRoutingFailure(code=OnionFailureCode.TRAMPOLINE_EXPIRY_TOO_SOON, data=b'')
 
         self.logs[payment_hash.hex()] = log = []
         trampoline_fee_level = self.INITIAL_TRAMPOLINE_FEE_LEVEL
@@ -1171,9 +1171,9 @@ class LNWallet(LNWorker):
                     payment_secret=payment_secret,
                     trampoline_fee_level=trampoline_fee_level,
                     use_two_trampolines=use_two_trampolines,
-                    fwd_trampoline_spero=fwd_trampoline_spero))
+                    fwd_trampoline_onion=fwd_trampoline_onion))
                 # 2. send htlcs
-                for route, amount_msat, total_msat, amount_receiver_msat, cltv_delta, bucket_payment_secret, trampoline_spero in routes:
+                for route, amount_msat, total_msat, amount_receiver_msat, cltv_delta, bucket_payment_secret, trampoline_onion in routes:
                     amount_inflight += amount_receiver_msat
                     if amount_inflight > amount_to_pay:  # safety belts
                         raise Exception(f"amount_inflight={amount_inflight} > amount_to_pay={amount_to_pay}")
@@ -1185,7 +1185,7 @@ class LNWallet(LNWorker):
                         payment_hash=payment_hash,
                         payment_secret=bucket_payment_secret,
                         min_cltv_expiry=cltv_delta,
-                        trampoline_spero=trampoline_spero)
+                        trampoline_onion=trampoline_onion)
                 util.trigger_callback('invoice_status', self.wallet, payment_hash.hex())
             # 3. await a queue
             self.logger.info(f"amount inflight {amount_inflight}")
@@ -1214,11 +1214,11 @@ class LNWallet(LNWorker):
             self.logger.info(f"UPDATE_FAIL_HTLC. code={repr(code)}. "
                              f"decoded_data={failure_msg.decode_data()}. data={data.hex()!r}")
             self.logger.info(f"error reported by {bh2u(route[sender_idx].node_id)}")
-            if code == SperoFailureCode.MPP_TIMEOUT:
+            if code == OnionFailureCode.MPP_TIMEOUT:
                 raise PaymentFailure(failure_msg.code_name())
             # trampoline
             if not self.channel_db:
-                if code == SperoFailureCode.TRAMPOLINE_FEE_INSUFFICIENT:
+                if code == OnionFailureCode.TRAMPOLINE_FEE_INSUFFICIENT:
                     # todo: parse the node parameters here (not returned by eclair yet)
                     trampoline_fee_level += 1
                     continue
@@ -1239,7 +1239,7 @@ class LNWallet(LNWorker):
             payment_hash: bytes,
             payment_secret: Optional[bytes],
             min_cltv_expiry: int,
-            trampoline_spero: bytes = None) -> None:
+            trampoline_onion: bytes = None) -> None:
 
         # send a single htlc
         short_channel_id = route[0].short_channel_id
@@ -1256,7 +1256,7 @@ class LNWallet(LNWorker):
             payment_hash=payment_hash,
             min_final_cltv_expiry=min_cltv_expiry,
             payment_secret=payment_secret,
-            trampoline_spero=trampoline_spero)
+            trampoline_onion=trampoline_onion)
 
         key = (payment_hash, short_channel_id, htlc.htlc_id)
         self.sent_htlcs_routes[key] = route, payment_secret, amount_msat, total_msat, amount_receiver_msat
@@ -1274,19 +1274,19 @@ class LNWallet(LNWorker):
             *,
             route: LNPaymentRoute,
             sender_idx: int,
-            failure_msg: SperoRoutingFailure,
+            failure_msg: OnionRoutingFailure,
             amount: int) -> None:
         code, data = failure_msg.code, failure_msg.data
-        # TODO can we use lnmsg.SperoWireSerializer here?
-        # TODO update spero_wire.csv
+        # TODO can we use lnmsg.OnionWireSerializer here?
+        # TODO update onion_wire.csv
         # handle some specific error codes
         failure_codes = {
-            SperoFailureCode.TEMPORARY_CHANNEL_FAILURE: 0,
-            SperoFailureCode.AMOUNT_BELOW_MINIMUM: 8,
-            SperoFailureCode.FEE_INSUFFICIENT: 8,
-            SperoFailureCode.INCORRECT_CLTV_EXPIRY: 4,
-            SperoFailureCode.EXPIRY_TOO_SOON: 0,
-            SperoFailureCode.CHANNEL_DISABLED: 2,
+            OnionFailureCode.TEMPORARY_CHANNEL_FAILURE: 0,
+            OnionFailureCode.AMOUNT_BELOW_MINIMUM: 8,
+            OnionFailureCode.FEE_INSUFFICIENT: 8,
+            OnionFailureCode.INCORRECT_CLTV_EXPIRY: 4,
+            OnionFailureCode.EXPIRY_TOO_SOON: 0,
+            OnionFailureCode.CHANNEL_DISABLED: 2,
         }
 
         # determine a fallback channel to blacklist if we don't get the erring
@@ -1317,7 +1317,7 @@ class LNWallet(LNWorker):
 
                 # we interpret a temporary channel failure as a liquidity issue
                 # in the channel and update our liquidity hints accordingly
-                if code == SperoFailureCode.TEMPORARY_CHANNEL_FAILURE:
+                if code == OnionFailureCode.TEMPORARY_CHANNEL_FAILURE:
                     self.network.path_finder.update_liquidity_hints(
                         route,
                         amount,
@@ -1430,7 +1430,7 @@ class LNWallet(LNWorker):
             payment_secret,
             trampoline_fee_level: int,
             use_two_trampolines: bool,
-            fwd_trampoline_spero = None,
+            fwd_trampoline_onion = None,
             full_path: LNPaymentPath = None) -> Sequence[Tuple[LNPaymentRoute, int]]:
 
         """Creates multiple routes for splitting a payment over the available
@@ -1443,7 +1443,7 @@ class LNWallet(LNWorker):
         # its capacity. This could be dealt with by temporarily
         # iteratively blacklisting channels for this mpp attempt.
         invoice_features = LnFeatures(invoice_features)
-        trampoline_features = LnFeatures.VAR_SPERO_OPT
+        trampoline_features = LnFeatures.VAR_ONION_OPT
         local_height = self.network.get_local_height()
         active_channels = [chan for chan in self.channels.values() if chan.is_active() and not chan.is_frozen_for_sending()]
         try:
@@ -1453,13 +1453,13 @@ class LNWallet(LNWorker):
                     if not self.is_trampoline_peer(chan.node_id):
                         continue
                     if chan.node_id == invoice_pubkey:
-                        trampoline_spero = None
+                        trampoline_onion = None
                         trampoline_payment_secret = payment_secret
                         trampoline_total_msat = final_total_msat
                         amount_with_fees = amount_msat
                         cltv_delta = min_cltv_expiry
                     else:
-                        trampoline_spero, amount_with_fees, cltv_delta = create_trampoline_route_and_spero(
+                        trampoline_onion, amount_with_fees, cltv_delta = create_trampoline_route_and_onion(
                             amount_msat=amount_msat,
                             total_msat=final_total_msat,
                             min_cltv_expiry=min_cltv_expiry,
@@ -1487,7 +1487,7 @@ class LNWallet(LNWorker):
                             cltv_expiry_delta=0,
                             node_features=trampoline_features)
                     ]
-                    routes = [(route, amount_with_fees, trampoline_total_msat, amount_msat, cltv_delta, trampoline_payment_secret, trampoline_spero)]
+                    routes = [(route, amount_with_fees, trampoline_total_msat, amount_msat, cltv_delta, trampoline_payment_secret, trampoline_onion)]
                     break
                 else:
                     raise NoPathFound()
@@ -1500,7 +1500,7 @@ class LNWallet(LNWorker):
                     invoice_features=invoice_features,
                     channels=active_channels,
                     full_path=full_path)
-                routes = [(route, amount_msat, final_total_msat, amount_msat, min_cltv_expiry, payment_secret, fwd_trampoline_spero)]
+                routes = [(route, amount_msat, final_total_msat, amount_msat, min_cltv_expiry, payment_secret, fwd_trampoline_onion)]
         except NoPathFound:
             if not invoice_features.supports(LnFeatures.BASIC_MPP_OPT):
                 raise
@@ -1527,7 +1527,7 @@ class LNWallet(LNWorker):
                                 buckets[chan.node_id].append((chan_id, part_amount_msat))
                         for node_id, bucket in buckets.items():
                             bucket_amount_msat = sum([x[1] for x in bucket])
-                            trampoline_spero, bucket_amount_with_fees, bucket_cltv_delta = create_trampoline_route_and_spero(
+                            trampoline_onion, bucket_amount_with_fees, bucket_cltv_delta = create_trampoline_route_and_onion(
                                 amount_msat=bucket_amount_msat,
                                 total_msat=final_total_msat,
                                 min_cltv_expiry=min_cltv_expiry,
@@ -1562,7 +1562,7 @@ class LNWallet(LNWorker):
                                         node_features=trampoline_features)
                                 ]
                                 self.logger.info(f'adding route {part_amount_msat} {delta_fee} {margin}')
-                                routes.append((route, part_amount_msat_with_fees, bucket_amount_with_fees, part_amount_msat, bucket_cltv_delta, bucket_payment_secret, trampoline_spero))
+                                routes.append((route, part_amount_msat_with_fees, bucket_amount_with_fees, part_amount_msat, bucket_cltv_delta, bucket_payment_secret, trampoline_onion))
                             if bucket_fees != 0:
                                 self.logger.info('not enough margin to pay trampoline fee')
                                 raise NoPathFound()
@@ -1578,7 +1578,7 @@ class LNWallet(LNWorker):
                                     invoice_features=invoice_features,
                                     channels=[channel],
                                     full_path=None)
-                                routes.append((route, part_amount_msat, final_total_msat, part_amount_msat, min_cltv_expiry, payment_secret, fwd_trampoline_spero))
+                                routes.append((route, part_amount_msat, final_total_msat, part_amount_msat, min_cltv_expiry, payment_secret, fwd_trampoline_onion))
                     self.logger.info(f"found acceptable split configuration: {list(s[0].values())} rating: {s[1]}")
                     break
                 except NoPathFound:
@@ -1831,7 +1831,7 @@ class LNWallet(LNWorker):
             payment_hash: bytes,
             htlc_id: int,
             error_bytes: Optional[bytes],
-            failure_message: Optional['SperoRoutingFailure']):
+            failure_message: Optional['OnionRoutingFailure']):
 
         util.trigger_callback('htlc_failed', payment_hash, chan.channel_id)
         q = self.sent_htlcs.get(payment_hash)
@@ -1841,12 +1841,12 @@ class LNWallet(LNWorker):
             key = (payment_hash, chan.short_channel_id, htlc_id)
             route, payment_secret, amount_msat, bucket_msat, amount_receiver_msat = self.sent_htlcs_routes[key]
             if error_bytes:
-                # TODO "decode_spero_error" might raise, catch and maybe blacklist/penalise someone?
+                # TODO "decode_onion_error" might raise, catch and maybe blacklist/penalise someone?
                 try:
-                    failure_message, sender_idx = chan.decode_spero_error(error_bytes, route, htlc_id)
+                    failure_message, sender_idx = chan.decode_onion_error(error_bytes, route, htlc_id)
                 except Exception as e:
                     sender_idx = None
-                    failure_message = SperoRoutingFailure(-1, str(e))
+                    failure_message = OnionRoutingFailure(-1, str(e))
             else:
                 # probably got "update_fail_malformed_htlc". well... who to penalise now?
                 assert failure_message is not None
@@ -1899,7 +1899,7 @@ class LNWallet(LNWorker):
             # note: as a fallback, if we don't have a channel update for the
             # incoming direction of our private channel, we fill the invoice with garbage.
             # the sender should still be able to pay us, but will incur an extra round trip
-            # (they will get the channel update from the spero error)
+            # (they will get the channel update from the onion error)
             # at least, that's the theory. https://github.com/lightningnetwork/lnd/issues/2066
             fee_base_msat = fee_proportional_millionths = 0
             cltv_expiry_delta = 1  # lnd won't even try with zero

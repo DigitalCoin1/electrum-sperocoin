@@ -56,7 +56,7 @@ from . import dns_hacks
 from .transaction import Transaction
 from .blockchain import Blockchain, HEADER_SIZE
 from .interface import (Interface, PREFERRED_NETWORK_PROTOCOL,
-                        RequestTimedOut, NetworkTimeout, BUCKET_NAME_OF_SPERO_SERVERS,
+                        RequestTimedOut, NetworkTimeout, BUCKET_NAME_OF_ONION_SERVERS,
                         NetworkException, RequestCorrupted, ServerAddr)
 from .version import PROTOCOL_VERSION
 from .simple_config import SimpleConfig
@@ -117,8 +117,8 @@ def filter_version(servers):
     return {k: v for k, v in servers.items() if is_recent(v.get('version'))}
 
 
-def filter_nospero(servers):
-    return {k: v for k, v in servers.items() if not k.endswith('.spero')}
+def filter_noonion(servers):
+    return {k: v for k, v in servers.items() if not k.endswith('.onion')}
 
 
 def filter_protocol(hostmap, *, allowed_protocols: Iterable[str] = None) -> Sequence[ServerAddr]:
@@ -564,8 +564,8 @@ class Network(Logger, NetworkRetryManager[ServerAddr]):
             else:
                 out[server.host] = {server.protocol: port}
         # potentially filter out some
-        if self.config.get('nospero'):
-            out = filter_nospero(out)
+        if self.config.get('noonion'):
+            out = filter_noonion(out)
         return out
 
     def _get_next_server_to_try(self) -> Optional[ServerAddr]:
@@ -820,10 +820,10 @@ class Network(Logger, NetworkRetryManager[ServerAddr]):
         for iface in interfaces:
             buckets[iface.bucket_based_on_ipaddress()].append(iface)
         # check proposed server against buckets
-        spero_servers = buckets[BUCKET_NAME_OF_SPERO_SERVERS]
+        onion_servers = buckets[BUCKET_NAME_OF_ONION_SERVERS]
         if iface_to_check.is_tor():
-            # keep number of spero servers below half of all connected servers
-            if len(spero_servers) > NUM_TARGET_CONNECTED_SERVERS // 2:
+            # keep number of onion servers below half of all connected servers
+            if len(onion_servers) > NUM_TARGET_CONNECTED_SERVERS // 2:
                 return False
         else:
             bucket = iface_to_check.bucket_based_on_ipaddress()
