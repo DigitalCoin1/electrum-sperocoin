@@ -1,8 +1,8 @@
 {
     "electrumx.sperocoin.org": {
         "pruning": "-",
-        "s": "82",
-        "t": "81",
+        "s": "50002",
+        "t": "50001",
         "version": "1.4"
     }
 }
