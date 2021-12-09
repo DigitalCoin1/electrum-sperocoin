@@ -39,8 +39,8 @@ folder.
         sudo rm -rf $FRESH_CLONE && \
         mkdir -p $FRESH_CLONE && \
         cd $FRESH_CLONE  && \
-        git clone https://github.com/DigitalCoin1/electrum-spero.git && \
-        cd electrum-spero
+        git clone https://github.com/DigitalCoin1/electrum-sperocoin.git && \
+        cd electrum-sperocoin
     ```
 
     And then build from this directory:
