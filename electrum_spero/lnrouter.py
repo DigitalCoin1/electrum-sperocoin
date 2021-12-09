@@ -115,9 +115,9 @@ class RouteEdge(PathEdge):
             return False
         return True
 
-    def has_feature_varspero(self) -> bool:
+    def has_feature_varonion(self) -> bool:
         features = LnFeatures(self.node_features)
-        return features.supports(LnFeatures.VAR_SPERO_OPT)
+        return features.supports(LnFeatures.VAR_ONION_OPT)
 
     def is_trampoline(self) -> bool:
         return False
@@ -572,7 +572,7 @@ class LNPathFinder(Logger):
             return None  # no path found
 
         # backtrack from search_end (nodeA) to search_start (nodeB)
-        # FIXME paths cannot be longer than 20 edges (spero packet)...
+        # FIXME paths cannot be longer than 20 edges (onion packet)...
         edge_startnode = nodeA
         path = []
         while edge_startnode != nodeB:

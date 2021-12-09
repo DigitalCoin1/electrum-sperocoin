@@ -27,10 +27,10 @@ from . import transaction
 from .bitcoin import make_op_return
 from .transaction import PartialTxOutput, match_script_against_template
 from .logging import Logger
-from .lnspero import (new_spero_packet, SperoFailureCode, calc_hops_data_for_payment,
-                      process_spero_packet, SperoPacket, construct_spero_error, SperoRoutingFailure,
-                      ProcessedSperoPacket, UnsupportedSperoPacketVersion, InvalidSperoMac, InvalidSperoPubkey,
-                      SperoFailureCodeMetaFlag)
+from .lnonion import (new_onion_packet, OnionFailureCode, calc_hops_data_for_payment,
+                      process_onion_packet, OnionPacket, construct_onion_error, OnionRoutingFailure,
+                      ProcessedOnionPacket, UnsupportedOnionPacketVersion, InvalidOnionMac, InvalidOnionPubkey,
+                      OnionFailureCodeMetaFlag)
 from .lnchannel import Channel, RevokeAndAck, RemoteCtnTooFarInFuture, ChannelState, PeerState
 from . import lnutil
 from .lnutil import (Outpoint, LocalConfig, RECEIVED, UpdateAddHtlc,
@@ -767,7 +767,7 @@ class Peer(Logger):
             "constraints": constraints,
             "remote_update": None,
             "state": ChannelState.PREOPENING.name,
-            'spero_keys': {},
+            'onion_keys': {},
             'data_loss_protect_remote_pcp': {},
             "log": {},
             "revocation_store": {},
@@ -1242,7 +1242,7 @@ class Peer(Logger):
             payment_hash: bytes,
             min_final_cltv_expiry: int,
             payment_secret: bytes = None,
-            trampoline_spero=None) -> UpdateAddHtlc:
+            trampoline_onion=None) -> UpdateAddHtlc:
 
         assert amount_msat > 0, "amount_msat is not greater zero"
         assert len(route) > 0
@@ -1264,26 +1264,26 @@ class Peer(Logger):
             self.logger.info(f"  {i}: edge={route[i].short_channel_id} hop_data={hops_data[i]!r}")
         assert final_cltv <= cltv, (final_cltv, cltv)
         session_key = os.urandom(32) # session_key
-        # if we are forwarding a trampoline payment, add trampoline spero
-        if trampoline_spero:
-            self.logger.info(f'adding trampoline spero to final payload')
+        # if we are forwarding a trampoline payment, add trampoline onion
+        if trampoline_onion:
+            self.logger.info(f'adding trampoline onion to final payload')
             trampoline_payload = hops_data[num_hops-2].payload
-            trampoline_payload["trampoline_spero_packet"] = {
-                "version": trampoline_spero.version,
-                "public_key": trampoline_spero.public_key,
-                "hops_data": trampoline_spero.hops_data,
-                "hmac": trampoline_spero.hmac
+            trampoline_payload["trampoline_onion_packet"] = {
+                "version": trampoline_onion.version,
+                "public_key": trampoline_onion.public_key,
+                "hops_data": trampoline_onion.hops_data,
+                "hmac": trampoline_onion.hmac
             }
-        # create spero packet
+        # create onion packet
         payment_path_pubkeys = [x.node_id for x in route]
-        spero = new_spero_packet(payment_path_pubkeys, session_key, hops_data, associated_data=payment_hash) # must use another sessionkey
+        onion = new_onion_packet(payment_path_pubkeys, session_key, hops_data, associated_data=payment_hash) # must use another sessionkey
         self.logger.info(f"starting payment. len(route)={len(hops_data)}.")
         # create htlc
         if cltv > local_height + lnutil.NBLOCK_CLTV_EXPIRY_TOO_FAR_INTO_FUTURE:
             raise PaymentFailure(f"htlc expiry too far into future. (in {cltv-local_height} blocks)")
         htlc = UpdateAddHtlc(amount_msat=amount_msat, payment_hash=payment_hash, cltv_expiry=cltv, timestamp=int(time.time()))
         htlc = chan.add_htlc(htlc)
-        chan.set_spero_key(htlc.htlc_id, session_key) # should it be the outer spero secret?
+        chan.set_onion_key(htlc.htlc_id, session_key) # should it be the outer onion secret?
         self.logger.info(f"starting payment. htlc: {htlc}")
         self.send_message(
             "update_add_htlc",
@@ -1292,7 +1292,7 @@ class Peer(Logger):
             cltv_expiry=htlc.cltv_expiry,
             amount_msat=htlc.amount_msat,
             payment_hash=htlc.payment_hash,
-            spero_routing_packet=spero.to_bytes())
+            onion_routing_packet=onion.to_bytes())
         self.maybe_send_commitment(chan)
         return htlc
 
@@ -1338,10 +1338,10 @@ class Peer(Logger):
         failure_code = payload["failure_code"]
         self.logger.info(f"on_update_fail_malformed_htlc. chan {chan.get_id_for_log()}. "
                          f"htlc_id {htlc_id}. failure_code={failure_code}")
-        if failure_code & SperoFailureCodeMetaFlag.BADSPERO == 0:
+        if failure_code & OnionFailureCodeMetaFlag.BADONION == 0:
             asyncio.ensure_future(self.lnworker.try_force_closing(chan.channel_id))
             raise RemoteMisbehaving(f"received update_fail_malformed_htlc with unexpected failure code: {failure_code}")
-        reason = SperoRoutingFailure(code=failure_code, data=payload["sha256_of_spero"])
+        reason = OnionRoutingFailure(code=failure_code, data=payload["sha256_of_onion"])
         chan.receive_fail_htlc(htlc_id, error_bytes=None, reason=reason)
         self.maybe_send_commitment(chan)
 
@@ -1350,7 +1350,7 @@ class Peer(Logger):
         htlc_id = payload["id"]
         cltv_expiry = payload["cltv_expiry"]
         amount_msat_htlc = payload["amount_msat"]
-        spero_packet = payload["spero_routing_packet"]
+        onion_packet = payload["onion_routing_packet"]
         htlc = UpdateAddHtlc(
             amount_msat=amount_msat_htlc,
             payment_hash=payment_hash,
@@ -1364,13 +1364,13 @@ class Peer(Logger):
             asyncio.ensure_future(self.lnworker.try_force_closing(chan.channel_id))
             raise RemoteMisbehaving(f"received update_add_htlc with cltv_expiry > BLOCKHEIGHT_MAX. value was {cltv_expiry}")
         # add htlc
-        chan.receive_htlc(htlc, spero_packet)
+        chan.receive_htlc(htlc, onion_packet)
         util.trigger_callback('htlc_added', chan, htlc, RECEIVED)
 
     def maybe_forward_htlc(
             self, *,
             htlc: UpdateAddHtlc,
-            processed_spero: ProcessedSperoPacket) -> Tuple[bytes, int]:
+            processed_onion: ProcessedOnionPacket) -> Tuple[bytes, int]:
 
         # Forward HTLC
         # FIXME: there are critical safety checks MISSING here
@@ -1380,52 +1380,52 @@ class Peer(Logger):
         forwarding_enabled = self.network.config.get('lightning_forward_payments', False)
         if not forwarding_enabled:
             self.logger.info(f"forwarding is disabled. failing htlc.")
-            raise SperoRoutingFailure(code=SperoFailureCode.PERMANENT_CHANNEL_FAILURE, data=b'')
+            raise OnionRoutingFailure(code=OnionFailureCode.PERMANENT_CHANNEL_FAILURE, data=b'')
         chain = self.network.blockchain()
         if chain.is_tip_stale():
-            raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
+            raise OnionRoutingFailure(code=OnionFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
         try:
-            next_chan_scid = processed_spero.hop_data.payload["short_channel_id"]["short_channel_id"]
+            next_chan_scid = processed_onion.hop_data.payload["short_channel_id"]["short_channel_id"]
         except:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
         next_chan = self.lnworker.get_channel_by_short_id(next_chan_scid)
         local_height = chain.height()
         if next_chan is None:
             self.logger.info(f"cannot forward htlc. cannot find next_chan {next_chan_scid}")
-            raise SperoRoutingFailure(code=SperoFailureCode.UNKNOWN_NEXT_PEER, data=b'')
+            raise OnionRoutingFailure(code=OnionFailureCode.UNKNOWN_NEXT_PEER, data=b'')
         outgoing_chan_upd = next_chan.get_outgoing_gossip_channel_update()[2:]
         outgoing_chan_upd_len = len(outgoing_chan_upd).to_bytes(2, byteorder="big")
         outgoing_chan_upd_message = outgoing_chan_upd_len + outgoing_chan_upd
         if not next_chan.can_send_update_add_htlc():
             self.logger.info(f"cannot forward htlc. next_chan {next_chan_scid} cannot send ctx updates. "
                              f"chan state {next_chan.get_state()!r}, peer state: {next_chan.peer_state!r}")
-            raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
+            raise OnionRoutingFailure(code=OnionFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
         try:
-            next_amount_msat_htlc = processed_spero.hop_data.payload["amt_to_forward"]["amt_to_forward"]
+            next_amount_msat_htlc = processed_onion.hop_data.payload["amt_to_forward"]["amt_to_forward"]
         except:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
         if not next_chan.can_pay(next_amount_msat_htlc):
             self.logger.info(f"cannot forward htlc due to transient errors (likely due to insufficient funds)")
-            raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
+            raise OnionRoutingFailure(code=OnionFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
         try:
-            next_cltv_expiry = processed_spero.hop_data.payload["outgoing_cltv_value"]["outgoing_cltv_value"]
+            next_cltv_expiry = processed_onion.hop_data.payload["outgoing_cltv_value"]["outgoing_cltv_value"]
         except:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
         if htlc.cltv_expiry - next_cltv_expiry < next_chan.forwarding_cltv_expiry_delta:
             data = htlc.cltv_expiry.to_bytes(4, byteorder="big") + outgoing_chan_upd_message
-            raise SperoRoutingFailure(code=SperoFailureCode.INCORRECT_CLTV_EXPIRY, data=data)
+            raise OnionRoutingFailure(code=OnionFailureCode.INCORRECT_CLTV_EXPIRY, data=data)
         if htlc.cltv_expiry - lnutil.MIN_FINAL_CLTV_EXPIRY_ACCEPTED <= local_height \
                 or next_cltv_expiry <= local_height:
-            raise SperoRoutingFailure(code=SperoFailureCode.EXPIRY_TOO_SOON, data=outgoing_chan_upd_message)
+            raise OnionRoutingFailure(code=OnionFailureCode.EXPIRY_TOO_SOON, data=outgoing_chan_upd_message)
         if max(htlc.cltv_expiry, next_cltv_expiry) > local_height + lnutil.NBLOCK_CLTV_EXPIRY_TOO_FAR_INTO_FUTURE:
-            raise SperoRoutingFailure(code=SperoFailureCode.EXPIRY_TOO_FAR, data=b'')
+            raise OnionRoutingFailure(code=OnionFailureCode.EXPIRY_TOO_FAR, data=b'')
         forwarding_fees = fee_for_edge_msat(
             forwarded_amount_msat=next_amount_msat_htlc,
             fee_base_msat=next_chan.forwarding_fee_base_msat,
             fee_proportional_millionths=next_chan.forwarding_fee_proportional_millionths)
         if htlc.amount_msat - next_amount_msat_htlc < forwarding_fees:
             data = next_amount_msat_htlc.to_bytes(8, byteorder="big") + outgoing_chan_upd_message
-            raise SperoRoutingFailure(code=SperoFailureCode.FEE_INSUFFICIENT, data=data)
+            raise OnionRoutingFailure(code=OnionFailureCode.FEE_INSUFFICIENT, data=data)
         self.logger.info(f'forwarding htlc to {next_chan.node_id}')
         next_htlc = UpdateAddHtlc(
             amount_msat=next_amount_msat_htlc,
@@ -1442,42 +1442,42 @@ class Peer(Logger):
                 cltv_expiry=next_cltv_expiry,
                 amount_msat=next_amount_msat_htlc,
                 payment_hash=next_htlc.payment_hash,
-                spero_routing_packet=processed_spero.next_packet.to_bytes()
+                onion_routing_packet=processed_onion.next_packet.to_bytes()
             )
         except BaseException as e:
             self.logger.info(f"failed to forward htlc: error sending message. {e}")
-            raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
+            raise OnionRoutingFailure(code=OnionFailureCode.TEMPORARY_CHANNEL_FAILURE, data=outgoing_chan_upd_message)
         return next_chan_scid, next_htlc.htlc_id
 
     def maybe_forward_trampoline(
             self, *,
             chan: Channel,
             htlc: UpdateAddHtlc,
-            trampoline_spero: ProcessedSperoPacket):
+            trampoline_onion: ProcessedOnionPacket):
 
-        payload = trampoline_spero.hop_data.payload
+        payload = trampoline_onion.hop_data.payload
         payment_hash = htlc.payment_hash
         payment_secret = os.urandom(32)
         try:
             outgoing_node_id = payload["outgoing_node_id"]["outgoing_node_id"]
             amt_to_forward = payload["amt_to_forward"]["amt_to_forward"]
-            cltv_from_spero = payload["outgoing_cltv_value"]["outgoing_cltv_value"]
+            cltv_from_onion = payload["outgoing_cltv_value"]["outgoing_cltv_value"]
             if "invoice_features" in payload:
                 self.logger.info('forward_trampoline: legacy')
-                next_trampoline_spero = None
+                next_trampoline_onion = None
                 invoice_features = payload["invoice_features"]["invoice_features"]
                 invoice_routing_info = payload["invoice_routing_info"]["invoice_routing_info"]
             else:
                 self.logger.info('forward_trampoline: end-to-end')
                 invoice_features = LnFeatures.BASIC_MPP_OPT
-                next_trampoline_spero = trampoline_spero.next_packet
+                next_trampoline_onion = trampoline_onion.next_packet
         except Exception as e:
             self.logger.exception('')
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
 
         # these are the fee/cltv paid by the sender
         # pay_to_node will raise if they are not sufficient
-        trampoline_cltv_delta = htlc.cltv_expiry - cltv_from_spero
+        trampoline_cltv_delta = htlc.cltv_expiry - cltv_from_onion
         trampoline_fee = htlc.amount_msat - amt_to_forward
 
         @log_exceptions
@@ -1488,19 +1488,19 @@ class Peer(Logger):
                     payment_hash=payment_hash,
                     payment_secret=payment_secret,
                     amount_to_pay=amt_to_forward,
-                    min_cltv_expiry=cltv_from_spero,
+                    min_cltv_expiry=cltv_from_onion,
                     r_tags=[],
                     invoice_features=invoice_features,
-                    fwd_trampoline_spero=next_trampoline_spero,
+                    fwd_trampoline_onion=next_trampoline_onion,
                     fwd_trampoline_fee=trampoline_fee,
                     fwd_trampoline_cltv_delta=trampoline_cltv_delta,
                     attempts=1)
-            except SperoRoutingFailure as e:
+            except OnionRoutingFailure as e:
                 # FIXME: cannot use payment_hash as key
                 self.lnworker.trampoline_forwarding_failures[payment_hash] = e
             except PaymentFailure as e:
                 # FIXME: adapt the error code
-                error_reason = SperoRoutingFailure(code=SperoFailureCode.UNKNOWN_NEXT_PEER, data=b'')
+                error_reason = OnionRoutingFailure(code=OnionFailureCode.UNKNOWN_NEXT_PEER, data=b'')
                 self.lnworker.trampoline_forwarding_failures[payment_hash] = error_reason
 
         asyncio.ensure_future(forward_trampoline_payment())
@@ -1509,21 +1509,21 @@ class Peer(Logger):
             self, *,
             chan: Channel,
             htlc: UpdateAddHtlc,
-            processed_spero: ProcessedSperoPacket,
-            is_trampoline: bool = False) -> Tuple[Optional[bytes], Optional[SperoPacket]]:
+            processed_onion: ProcessedOnionPacket,
+            is_trampoline: bool = False) -> Tuple[Optional[bytes], Optional[OnionPacket]]:
 
         """As a final recipient of an HTLC, decide if we should fulfill it.
-        Return (preimage, trampoline_spero_packet) with at most a single element not None
+        Return (preimage, trampoline_onion_packet) with at most a single element not None
         """
         def log_fail_reason(reason: str):
             self.logger.info(f"maybe_fulfill_htlc. will FAIL HTLC: chan {chan.short_channel_id}. "
-                             f"{reason}. htlc={str(htlc)}. spero_payload={processed_spero.hop_data.payload}")
+                             f"{reason}. htlc={str(htlc)}. onion_payload={processed_onion.hop_data.payload}")
 
         try:
-            amt_to_forward = processed_spero.hop_data.payload["amt_to_forward"]["amt_to_forward"]
+            amt_to_forward = processed_onion.hop_data.payload["amt_to_forward"]["amt_to_forward"]
         except:
-            log_fail_reason(f"'amt_to_forward' missing from spero")
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
+            log_fail_reason(f"'amt_to_forward' missing from onion")
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
 
         # Check that our blockchain tip is sufficiently recent so that we have an approx idea of the height.
         # We should not release the preimage for an HTLC that its sender could already time out as
@@ -1531,60 +1531,60 @@ class Peer(Logger):
         chain = self.network.blockchain()
         if chain.is_tip_stale():
             log_fail_reason(f"our chain tip is stale")
-            raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
+            raise OnionRoutingFailure(code=OnionFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
         local_height = chain.height()
-        exc_incorrect_or_unknown_pd = SperoRoutingFailure(
-            code=SperoFailureCode.INCORRECT_OR_UNKNOWN_PAYMENT_DETAILS,
+        exc_incorrect_or_unknown_pd = OnionRoutingFailure(
+            code=OnionFailureCode.INCORRECT_OR_UNKNOWN_PAYMENT_DETAILS,
             data=amt_to_forward.to_bytes(8, byteorder="big") + local_height.to_bytes(4, byteorder="big"))
         if local_height + MIN_FINAL_CLTV_EXPIRY_ACCEPTED > htlc.cltv_expiry:
             log_fail_reason(f"htlc.cltv_expiry is unreasonably close")
             raise exc_incorrect_or_unknown_pd
         try:
-            cltv_from_spero = processed_spero.hop_data.payload["outgoing_cltv_value"]["outgoing_cltv_value"]
+            cltv_from_onion = processed_onion.hop_data.payload["outgoing_cltv_value"]["outgoing_cltv_value"]
         except:
-            log_fail_reason(f"'outgoing_cltv_value' missing from spero")
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_PAYLOAD, data=b'\x00\x00\x00')
+            log_fail_reason(f"'outgoing_cltv_value' missing from onion")
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_PAYLOAD, data=b'\x00\x00\x00')
 
         if not is_trampoline:
-            if cltv_from_spero != htlc.cltv_expiry:
-                log_fail_reason(f"cltv_from_spero != htlc.cltv_expiry")
-                raise SperoRoutingFailure(
-                    code=SperoFailureCode.FINAL_INCORRECT_CLTV_EXPIRY,
+            if cltv_from_onion != htlc.cltv_expiry:
+                log_fail_reason(f"cltv_from_onion != htlc.cltv_expiry")
+                raise OnionRoutingFailure(
+                    code=OnionFailureCode.FINAL_INCORRECT_CLTV_EXPIRY,
                     data=htlc.cltv_expiry.to_bytes(4, byteorder="big"))
         try:
-            total_msat = processed_spero.hop_data.payload["payment_data"]["total_msat"]
+            total_msat = processed_onion.hop_data.payload["payment_data"]["total_msat"]
         except:
             total_msat = amt_to_forward # fall back to "amt_to_forward"
 
         if not is_trampoline and amt_to_forward != htlc.amount_msat:
             log_fail_reason(f"amt_to_forward != htlc.amount_msat")
-            raise SperoRoutingFailure(
-                code=SperoFailureCode.FINAL_INCORRECT_HTLC_AMOUNT,
+            raise OnionRoutingFailure(
+                code=OnionFailureCode.FINAL_INCORRECT_HTLC_AMOUNT,
                 data=htlc.amount_msat.to_bytes(8, byteorder="big"))
 
         try:
-            payment_secret_from_spero = processed_spero.hop_data.payload["payment_data"]["payment_secret"]
+            payment_secret_from_onion = processed_onion.hop_data.payload["payment_data"]["payment_secret"]
         except:
             if total_msat > amt_to_forward:
                 # payment_secret is required for MPP
-                log_fail_reason(f"'payment_secret' missing from spero")
+                log_fail_reason(f"'payment_secret' missing from onion")
                 raise exc_incorrect_or_unknown_pd
             # TODO fail here if invoice has set PAYMENT_SECRET_REQ
-            payment_secret_from_spero = None
+            payment_secret_from_onion = None
 
         if total_msat > amt_to_forward:
-            mpp_status = self.lnworker.check_received_mpp_htlc(payment_secret_from_spero, chan.short_channel_id, htlc, total_msat)
+            mpp_status = self.lnworker.check_received_mpp_htlc(payment_secret_from_onion, chan.short_channel_id, htlc, total_msat)
             if mpp_status is None:
                 return None, None
             if mpp_status is False:
                 log_fail_reason(f"MPP_TIMEOUT")
-                raise SperoRoutingFailure(code=SperoFailureCode.MPP_TIMEOUT, data=b'')
+                raise OnionRoutingFailure(code=OnionFailureCode.MPP_TIMEOUT, data=b'')
             assert mpp_status is True
 
-        # if there is a trampoline_spero, maybe_fulfill_htlc will be called again
-        if processed_spero.trampoline_spero_packet:
-            # TODO: we should check that all trampoline_speros are the same
-            return None, processed_spero.trampoline_spero_packet
+        # if there is a trampoline_onion, maybe_fulfill_htlc will be called again
+        if processed_onion.trampoline_onion_packet:
+            # TODO: we should check that all trampoline_onions are the same
+            return None, processed_onion.trampoline_onion_packet
 
         # TODO don't accept payments twice for same invoice
         # TODO check invoice expiry
@@ -1593,9 +1593,9 @@ class Peer(Logger):
             log_fail_reason(f"no payment_info found for RHASH {htlc.payment_hash.hex()}")
             raise exc_incorrect_or_unknown_pd
         preimage = self.lnworker.get_preimage(htlc.payment_hash)
-        if payment_secret_from_spero:
-            if payment_secret_from_spero != derive_payment_secret_from_payment_preimage(preimage):
-                log_fail_reason(f'incorrect payment secret {payment_secret_from_spero.hex()} != {derive_payment_secret_from_payment_preimage(preimage).hex()}')
+        if payment_secret_from_onion:
+            if payment_secret_from_onion != derive_payment_secret_from_payment_preimage(preimage):
+                log_fail_reason(f'incorrect payment secret {payment_secret_from_onion.hex()} != {derive_payment_secret_from_payment_preimage(preimage).hex()}')
                 raise exc_incorrect_or_unknown_pd
         invoice_msat = info.amount_msat
         if not (invoice_msat is None or invoice_msat <= total_msat <= 2 * invoice_msat):
@@ -1629,10 +1629,10 @@ class Peer(Logger):
             len=len(error_bytes),
             reason=error_bytes)
 
-    def fail_malformed_htlc(self, *, chan: Channel, htlc_id: int, reason: SperoRoutingFailure):
+    def fail_malformed_htlc(self, *, chan: Channel, htlc_id: int, reason: OnionRoutingFailure):
         self.logger.info(f"fail_malformed_htlc. chan {chan.short_channel_id}. htlc_id {htlc_id}.")
         assert chan.can_send_ctx_updates(), f"cannot send updates: {chan.short_channel_id}"
-        if not (reason.code & SperoFailureCodeMetaFlag.BADSPERO and len(reason.data) == 32):
+        if not (reason.code & OnionFailureCodeMetaFlag.BADONION and len(reason.data) == 32):
             raise Exception(f"unexpected reason when sending 'update_fail_malformed_htlc': {reason!r}")
         self.received_htlcs_pending_removal.add((chan, htlc_id))
         chan.fail_htlc(htlc_id)
@@ -1640,7 +1640,7 @@ class Peer(Logger):
             "update_fail_malformed_htlc",
             channel_id=chan.channel_id,
             id=htlc_id,
-            sha256_of_spero=reason.data,
+            sha256_of_onion=reason.data,
             failure_code=reason.code)
 
     def on_revoke_and_ack(self, chan: Channel, payload):
@@ -1856,19 +1856,19 @@ class Peer(Logger):
                 self.maybe_send_commitment(chan)
                 done = set()
                 unfulfilled = chan.hm.log.get('unfulfilled_htlcs', {})
-                for htlc_id, (local_ctn, remote_ctn, spero_packet_hex, forwarding_info) in unfulfilled.items():
+                for htlc_id, (local_ctn, remote_ctn, onion_packet_hex, forwarding_info) in unfulfilled.items():
                     if not chan.hm.is_htlc_irrevocably_added_yet(htlc_proposer=REMOTE, htlc_id=htlc_id):
                         continue
                     htlc = chan.hm.get_htlc_by_id(REMOTE, htlc_id)
-                    error_reason = None  # type: Optional[SperoRoutingFailure]
+                    error_reason = None  # type: Optional[OnionRoutingFailure]
                     error_bytes = None  # type: Optional[bytes]
                     preimage = None
                     fw_info = None
-                    spero_packet_bytes = bytes.fromhex(spero_packet_hex)
-                    spero_packet = None
+                    onion_packet_bytes = bytes.fromhex(onion_packet_hex)
+                    onion_packet = None
                     try:
-                        spero_packet = SperoPacket.from_bytes(spero_packet_bytes)
-                    except SperoRoutingFailure as e:
+                        onion_packet = OnionPacket.from_bytes(onion_packet_bytes)
+                    except OnionRoutingFailure as e:
                         error_reason = e
                     else:
                         try:
@@ -1876,12 +1876,12 @@ class Peer(Logger):
                                 chan=chan,
                                 htlc=htlc,
                                 forwarding_info=forwarding_info,
-                                spero_packet_bytes=spero_packet_bytes,
-                                spero_packet=spero_packet)
-                        except SperoRoutingFailure as e:
-                            error_bytes = construct_spero_error(e, spero_packet, our_spero_private_key=self.privkey)
+                                onion_packet_bytes=onion_packet_bytes,
+                                onion_packet=onion_packet)
+                        except OnionRoutingFailure as e:
+                            error_bytes = construct_onion_error(e, onion_packet, our_onion_private_key=self.privkey)
                     if fw_info:
-                        unfulfilled[htlc_id] = local_ctn, remote_ctn, spero_packet_hex, fw_info
+                        unfulfilled[htlc_id] = local_ctn, remote_ctn, onion_packet_hex, fw_info
                     elif preimage or error_reason or error_bytes:
                         if preimage:
                             if not self.lnworker.enable_htlc_settle:
@@ -1930,37 +1930,37 @@ class Peer(Logger):
             chan: Channel,
             htlc: UpdateAddHtlc,
             forwarding_info: Tuple[str, int],
-            spero_packet_bytes: bytes,
-            spero_packet: SperoPacket) -> Tuple[Optional[bytes], Union[bool, None, Tuple[str, int]], Optional[bytes]]:
+            onion_packet_bytes: bytes,
+            onion_packet: OnionPacket) -> Tuple[Optional[bytes], Union[bool, None, Tuple[str, int]], Optional[bytes]]:
         """
         return (preimage, fw_info, error_bytes) with at most a single element that is not None
-        raise an SperoRoutingFailure if we need to fail the htlc
+        raise an OnionRoutingFailure if we need to fail the htlc
         """
         payment_hash = htlc.payment_hash
-        processed_spero = self.process_spero_packet(
-            spero_packet,
+        processed_onion = self.process_onion_packet(
+            onion_packet,
             payment_hash=payment_hash,
-            spero_packet_bytes=spero_packet_bytes)
-        if processed_spero.are_we_final:
+            onion_packet_bytes=onion_packet_bytes)
+        if processed_onion.are_we_final:
             # either we are final recipient; or if trampoline, see cases below
-            preimage, trampoline_spero_packet = self.maybe_fulfill_htlc(
+            preimage, trampoline_onion_packet = self.maybe_fulfill_htlc(
                 chan=chan,
                 htlc=htlc,
-                processed_spero=processed_spero)
-            if trampoline_spero_packet:
+                processed_onion=processed_onion)
+            if trampoline_onion_packet:
                 # trampoline- recipient or forwarding
                 if not forwarding_info:
-                    trampoline_spero = self.process_spero_packet(
-                        trampoline_spero_packet,
+                    trampoline_onion = self.process_onion_packet(
+                        trampoline_onion_packet,
                         payment_hash=htlc.payment_hash,
-                        spero_packet_bytes=spero_packet_bytes,
+                        onion_packet_bytes=onion_packet_bytes,
                         is_trampoline=True)
-                    if trampoline_spero.are_we_final:
+                    if trampoline_onion.are_we_final:
                         # trampoline- we are final recipient of HTLC
                         preimage, _ = self.maybe_fulfill_htlc(
                             chan=chan,
                             htlc=htlc,
-                            processed_spero=trampoline_spero,
+                            processed_onion=trampoline_onion,
                             is_trampoline=True)
                     else:
                         # trampoline- HTLC we are supposed to forward, but haven't forwarded yet
@@ -1969,7 +1969,7 @@ class Peer(Logger):
                         self.maybe_forward_trampoline(
                             chan=chan,
                             htlc=htlc,
-                            trampoline_spero=trampoline_spero)
+                            trampoline_onion=trampoline_onion)
                         # return True so that this code gets executed only once
                         return None, True, None
                 else:
@@ -1986,7 +1986,7 @@ class Peer(Logger):
                 return None, None, None
             next_chan_id, next_htlc_id = self.maybe_forward_htlc(
                 htlc=htlc,
-                processed_spero=processed_spero)
+                processed_onion=processed_onion)
             fw_info = (next_chan_id.hex(), next_htlc_id)
             return None, fw_info, None
         else:
@@ -2004,31 +2004,31 @@ class Peer(Logger):
             return preimage, None, None
         return None, None, None
 
-    def process_spero_packet(
+    def process_onion_packet(
             self,
-            spero_packet: SperoPacket, *,
+            onion_packet: OnionPacket, *,
             payment_hash: bytes,
-            spero_packet_bytes: bytes,
-            is_trampoline: bool = False) -> ProcessedSperoPacket:
+            onion_packet_bytes: bytes,
+            is_trampoline: bool = False) -> ProcessedOnionPacket:
 
-        failure_data = sha256(spero_packet_bytes)
+        failure_data = sha256(onion_packet_bytes)
         try:
-            processed_spero = process_spero_packet(
-                spero_packet,
+            processed_onion = process_onion_packet(
+                onion_packet,
                 associated_data=payment_hash,
-                our_spero_private_key=self.privkey,
+                our_onion_private_key=self.privkey,
                 is_trampoline=is_trampoline)
-        except UnsupportedSperoPacketVersion:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_VERSION, data=failure_data)
-        except InvalidSperoPubkey:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_KEY, data=failure_data)
-        except InvalidSperoMac:
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_HMAC, data=failure_data)
+        except UnsupportedOnionPacketVersion:
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_VERSION, data=failure_data)
+        except InvalidOnionPubkey:
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_KEY, data=failure_data)
+        except InvalidOnionMac:
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_HMAC, data=failure_data)
         except Exception as e:
-            self.logger.info(f"error processing spero packet: {e!r}")
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_VERSION, data=failure_data)
+            self.logger.info(f"error processing onion packet: {e!r}")
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_VERSION, data=failure_data)
         if self.network.config.get('test_fail_malformed_htlc'):
-            raise SperoRoutingFailure(code=SperoFailureCode.INVALID_SPERO_VERSION, data=failure_data)
+            raise OnionRoutingFailure(code=OnionFailureCode.INVALID_ONION_VERSION, data=failure_data)
         if self.network.config.get('test_fail_htlcs_with_temp_node_failure'):
-            raise SperoRoutingFailure(code=SperoFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
-        return processed_spero
+            raise OnionRoutingFailure(code=OnionFailureCode.TEMPORARY_NODE_FAILURE, data=b'')
+        return processed_onion

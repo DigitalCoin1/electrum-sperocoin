@@ -3,9 +3,9 @@ import io
 from electrum_spero.lnmsg import (read_bigsize_int, write_bigsize_int, FieldEncodingNotMinimal,
                                 UnexpectedEndOfStream, LNSerializer, UnknownMandatoryTLVRecordType,
                                 MalformedMsg, MsgTrailingGarbage, MsgInvalidFieldOrder, encode_msg,
-                                decode_msg, UnexpectedFieldSizeForEncoder, SperoWireSerializer,
+                                decode_msg, UnexpectedFieldSizeForEncoder, OnionWireSerializer,
                                 UnknownMsgType)
-from electrum_spero.lnspero import SperoRoutingFailure
+from electrum_spero.lnonion import OnionRoutingFailure
 from electrum_spero.util import bfh
 from electrum_spero.lnutil import ShortChannelID, LnFeatures
 from electrum_spero import constants
@@ -386,15 +386,15 @@ class TestLNMsg(TestCaseForTestnet):
                           }}),
                          decode_msg(bfh("001000022200000302aaa20120a0293e4eeb3da6e6f56f81ed595f57880d1a21569e13eefdd951284b5a626649")))
 
-    def test_decode_spero_error(self):
-        orf = SperoRoutingFailure.from_bytes(bfh("400f0000000017d2d8b0001d9458"))
+    def test_decode_onion_error(self):
+        orf = OnionRoutingFailure.from_bytes(bfh("400f0000000017d2d8b0001d9458"))
         self.assertEqual(('incorrect_or_unknown_payment_details', {'htlc_msat': 399694000, 'height': 1938520}),
-                         SperoWireSerializer.decode_msg(orf.to_bytes()))
+                         OnionWireSerializer.decode_msg(orf.to_bytes()))
         self.assertEqual({'htlc_msat': 399694000, 'height': 1938520},
                          orf.decode_data())
 
-        orf2 = SperoRoutingFailure(26399, bytes.fromhex("0000000017d2d8b0001d9458"))
+        orf2 = OnionRoutingFailure(26399, bytes.fromhex("0000000017d2d8b0001d9458"))
         with self.assertRaises(UnknownMsgType):
-            SperoWireSerializer.decode_msg(orf2.to_bytes())
+            OnionWireSerializer.decode_msg(orf2.to_bytes())
         self.assertEqual(None, orf2.decode_data())
 

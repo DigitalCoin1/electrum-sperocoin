@@ -41,7 +41,7 @@ from .bitcoin import redeem_script_to_address
 from .crypto import sha256, sha256d
 from .transaction import Transaction, PartialTransaction, TxInput
 from .logging import Logger
-from .lnspero import decode_spero_error, SperoFailureCode, SperoRoutingFailure
+from .lnonion import decode_onion_error, OnionFailureCode, OnionRoutingFailure
 from . import lnutil
 from .lnutil import (Outpoint, LocalConfig, RemoteConfig, Keypair, OnlyPubkeyKeypair, ChannelConstraints,
                      get_per_commitment_secret_from_seed, secret_to_pubkey, derive_privkey, make_closing_tx,
@@ -553,7 +553,7 @@ class Channel(AbstractChannel):
         self.funding_outpoint = state["funding_outpoint"]
         self.node_id = bfh(state["node_id"])
         self.short_channel_id = ShortChannelID.normalize(state["short_channel_id"])
-        self.spero_keys = state['spero_keys']  # type: Dict[int, bytes]
+        self.onion_keys = state['onion_keys']  # type: Dict[int, bytes]
         self.data_loss_protect_remote_pcp = state['data_loss_protect_remote_pcp']
         self.hm = HTLCManager(log=state['log'], initial_feerate=initial_feerate)
         self._state = ChannelState[state['state']]
@@ -563,7 +563,7 @@ class Channel(AbstractChannel):
         self._chan_ann_without_sigs = None  # type: Optional[bytes]
         self.revocation_store = RevocationStore(state["revocation_store"])
         self._can_send_ctx_updates = True  # type: bool
-        self._receive_fail_reasons = {}  # type: Dict[int, (bytes, SperoRoutingFailure)]
+        self._receive_fail_reasons = {}  # type: Dict[int, (bytes, OnionRoutingFailure)]
         self._ignore_max_htlc_value = False  # used in tests
         self.should_request_force_close = False
         self.unconfirmed_closing_txid = None # not a state, only for GUI
@@ -594,11 +594,11 @@ class Channel(AbstractChannel):
         except:
             return super().diagnostic_name()
 
-    def set_spero_key(self, key: int, value: bytes):
-        self.spero_keys[key] = value
+    def set_onion_key(self, key: int, value: bytes):
+        self.onion_keys[key] = value
 
-    def get_spero_key(self, key: int) -> bytes:
-        return self.spero_keys.get(key)
+    def get_onion_key(self, key: int) -> bytes:
+        return self.onion_keys.get(key)
 
     def set_data_loss_protect_remote_pcp(self, key, value):
         self.data_loss_protect_remote_pcp[key] = value
@@ -887,7 +887,7 @@ class Channel(AbstractChannel):
         self.logger.info("add_htlc")
         return htlc
 
-    def receive_htlc(self, htlc: UpdateAddHtlc, spero_packet:bytes = None) -> UpdateAddHtlc:
+    def receive_htlc(self, htlc: UpdateAddHtlc, onion_packet:bytes = None) -> UpdateAddHtlc:
         """Adds a new REMOTE HTLC to the channel.
         Action must be initiated by REMOTE.
         """
@@ -904,9 +904,9 @@ class Channel(AbstractChannel):
             self.hm.recv_htlc(htlc)
             local_ctn = self.get_latest_ctn(LOCAL)
             remote_ctn = self.get_latest_ctn(REMOTE)
-            if spero_packet:
+            if onion_packet:
                 # TODO neither local_ctn nor remote_ctn are used anymore... no point storing them.
-                self.hm.log['unfulfilled_htlcs'][htlc.htlc_id] = local_ctn, remote_ctn, spero_packet.hex(), False
+                self.hm.log['unfulfilled_htlcs'][htlc.htlc_id] = local_ctn, remote_ctn, onion_packet.hex(), False
 
         self.logger.info("receive_htlc")
         return htlc
@@ -1063,7 +1063,7 @@ class Channel(AbstractChannel):
             self,
             htlc_id: int,
             error_bytes: Optional[bytes],
-            failure_message: Optional['SperoRoutingFailure']):
+            failure_message: Optional['OnionRoutingFailure']):
         error_hex = error_bytes.hex() if error_bytes else None
         failure_hex = failure_message.to_bytes().hex() if failure_message else None
         self.hm.log['fail_htlc_reasons'][htlc_id] = (error_hex, failure_hex)
@@ -1071,7 +1071,7 @@ class Channel(AbstractChannel):
     def pop_fail_htlc_reason(self, htlc_id):
         error_hex, failure_hex = self.hm.log['fail_htlc_reasons'].pop(htlc_id, (None, None))
         error_bytes = bytes.fromhex(error_hex) if error_hex else None
-        failure_message = SperoRoutingFailure.from_bytes(bytes.fromhex(failure_hex)) if failure_hex else None
+        failure_message = OnionRoutingFailure.from_bytes(bytes.fromhex(failure_hex)) if failure_hex else None
         return error_bytes, failure_message
 
     def extract_preimage_from_htlc_txin(self, txin: TxInput) -> None:
@@ -1290,12 +1290,12 @@ class Channel(AbstractChannel):
         htlc = self.hm.get_htlc_by_id(LOCAL, htlc_id)
         return htlc.payment_hash
 
-    def decode_spero_error(self, reason: bytes, route: Sequence['RouteEdge'],
-                           htlc_id: int) -> Tuple[SperoRoutingFailure, int]:
-        failure_msg, sender_idx = decode_spero_error(
+    def decode_onion_error(self, reason: bytes, route: Sequence['RouteEdge'],
+                           htlc_id: int) -> Tuple[OnionRoutingFailure, int]:
+        failure_msg, sender_idx = decode_onion_error(
             reason,
             [x.node_id for x in route],
-            self.spero_keys[htlc_id])
+            self.onion_keys[htlc_id])
         return failure_msg, sender_idx
 
     def receive_htlc_settle(self, preimage: bytes, htlc_id: int) -> None:
@@ -1320,7 +1320,7 @@ class Channel(AbstractChannel):
 
     def receive_fail_htlc(self, htlc_id: int, *,
                           error_bytes: Optional[bytes],
-                          reason: Optional[SperoRoutingFailure] = None) -> None:
+                          reason: Optional[OnionRoutingFailure] = None) -> None:
         """Fail a pending offered HTLC.
         Action must be initiated by REMOTE.
         """

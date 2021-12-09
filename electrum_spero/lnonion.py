@@ -32,8 +32,8 @@ from . import ecc
 from .crypto import sha256, hmac_oneshot, chacha20_encrypt
 from .util import bh2u, profiler, xor_bytes, bfh
 from .lnutil import (get_ecdh, PaymentFailure, NUM_MAX_HOPS_IN_PAYMENT_PATH,
-                     NUM_MAX_EDGES_IN_PAYMENT_PATH, ShortChannelID, SperoFailureCodeMetaFlag)
-from .lnmsg import SperoWireSerializer, read_bigsize_int, write_bigsize_int
+                     NUM_MAX_EDGES_IN_PAYMENT_PATH, ShortChannelID, OnionFailureCodeMetaFlag)
+from .lnmsg import OnionWireSerializer, read_bigsize_int, write_bigsize_int
 from . import lnmsg
 
 if TYPE_CHECKING:
@@ -46,9 +46,9 @@ LEGACY_PER_HOP_FULL_SIZE = 65
 PER_HOP_HMAC_SIZE = 32
 
 
-class UnsupportedSperoPacketVersion(Exception): pass
-class InvalidSperoMac(Exception): pass
-class InvalidSperoPubkey(Exception): pass
+class UnsupportedOnionPacketVersion(Exception): pass
+class InvalidOnionMac(Exception): pass
+class InvalidOnionPubkey(Exception): pass
 
 
 class LegacyHopDataPayload:
@@ -94,7 +94,7 @@ class LegacyHopDataPayload:
         )
 
 
-class SperoHopsDataSingle:  # called HopData in lnd
+class OnionHopsDataSingle:  # called HopData in lnd
 
     def __init__(self, *, is_tlv_payload: bool, payload: dict = None):
         self.is_tlv_payload = is_tlv_payload
@@ -121,7 +121,7 @@ class SperoHopsDataSingle:  # called HopData in lnd
             return ret
         else:  # tlv
             payload_fd = io.BytesIO()
-            SperoWireSerializer.write_tlv_stream(fd=payload_fd,
+            OnionWireSerializer.write_tlv_stream(fd=payload_fd,
                                                  tlv_stream_name="tlv_payload",
                                                  **self.payload)
             payload_bytes = payload_fd.getvalue()
@@ -132,7 +132,7 @@ class SperoHopsDataSingle:  # called HopData in lnd
                 return fd.getvalue()
 
     @classmethod
-    def from_fd(cls, fd: io.BytesIO) -> 'SperoHopsDataSingle':
+    def from_fd(cls, fd: io.BytesIO) -> 'OnionHopsDataSingle':
         first_byte = fd.read(1)
         if len(first_byte) == 0:
             raise Exception(f"unexpected EOF")
@@ -142,7 +142,7 @@ class SperoHopsDataSingle:  # called HopData in lnd
             b = fd.read(LEGACY_PER_HOP_FULL_SIZE)
             if len(b) != LEGACY_PER_HOP_FULL_SIZE:
                 raise Exception(f'unexpected length {len(b)}')
-            ret = SperoHopsDataSingle(is_tlv_payload=False)
+            ret = OnionHopsDataSingle(is_tlv_payload=False)
             legacy_payload = LegacyHopDataPayload.from_bytes(b[1:33])
             ret.payload = legacy_payload.to_tlv_dict()
             ret.hmac = b[33:]
@@ -155,18 +155,18 @@ class SperoHopsDataSingle:  # called HopData in lnd
             hop_payload = fd.read(hop_payload_length)
             if hop_payload_length != len(hop_payload):
                 raise Exception(f"unexpected EOF")
-            ret = SperoHopsDataSingle(is_tlv_payload=True)
-            ret.payload = SperoWireSerializer.read_tlv_stream(fd=io.BytesIO(hop_payload),
+            ret = OnionHopsDataSingle(is_tlv_payload=True)
+            ret.payload = OnionWireSerializer.read_tlv_stream(fd=io.BytesIO(hop_payload),
                                                               tlv_stream_name="tlv_payload")
             ret.hmac = fd.read(PER_HOP_HMAC_SIZE)
             assert len(ret.hmac) == PER_HOP_HMAC_SIZE
             return ret
 
     def __repr__(self):
-        return f"<SperoHopsDataSingle. is_tlv_payload={self.is_tlv_payload}. payload={self.payload}. hmac={self.hmac}>"
+        return f"<OnionHopsDataSingle. is_tlv_payload={self.is_tlv_payload}. payload={self.payload}. hmac={self.hmac}>"
 
 
-class SperoPacket:
+class OnionPacket:
 
     def __init__(self, public_key: bytes, hops_data: bytes, hmac: bytes):
         assert len(public_key) == 33
@@ -177,7 +177,7 @@ class SperoPacket:
         self.hops_data = hops_data  # also called RoutingInfo in bolt-04
         self.hmac = hmac
         if not ecc.ECPubkey.is_pubkey_bytes(public_key):
-            raise InvalidSperoPubkey()
+            raise InvalidOnionPubkey()
 
     def to_bytes(self) -> bytes:
         ret = bytes([self.version])
@@ -194,15 +194,15 @@ class SperoPacket:
             raise Exception('unexpected length {}'.format(len(b)))
         version = b[0]
         if version != 0:
-            raise UnsupportedSperoPacketVersion('version {} is not supported'.format(version))
-        return SperoPacket(
+            raise UnsupportedOnionPacketVersion('version {} is not supported'.format(version))
+        return OnionPacket(
             public_key=b[1:34],
             hops_data=b[34:-32],
             hmac=b[-32:]
         )
 
 
-def get_bolt04_spero_key(key_type: bytes, secret: bytes) -> bytes:
+def get_bolt04_onion_key(key_type: bytes, secret: bytes) -> bytes:
     if key_type not in (b'rho', b'mu', b'um', b'ammag', b'pad'):
         raise Exception('invalid key_type {}'.format(key_type))
     key = hmac_oneshot(key_type, msg=secret, digest=hashlib.sha256)
@@ -226,8 +226,8 @@ def get_shared_secrets_along_route(payment_path_pubkeys: Sequence[bytes],
     return hop_shared_secrets
 
 
-def new_spero_packet(payment_path_pubkeys: Sequence[bytes], session_key: bytes,
-                     hops_data: Sequence[SperoHopsDataSingle], associated_data: bytes, trampoline=False) -> SperoPacket:
+def new_onion_packet(payment_path_pubkeys: Sequence[bytes], session_key: bytes,
+                     hops_data: Sequence[OnionHopsDataSingle], associated_data: bytes, trampoline=False) -> OnionPacket:
     num_hops = len(payment_path_pubkeys)
     assert num_hops == len(hops_data)
     hop_shared_secrets = get_shared_secrets_along_route(payment_path_pubkeys, session_key)
@@ -238,13 +238,13 @@ def new_spero_packet(payment_path_pubkeys: Sequence[bytes], session_key: bytes,
 
     # Our starting packet needs to be filled out with random bytes, we
     # generate some deterministically using the session private key.
-    pad_key = get_bolt04_spero_key(b'pad', session_key)
+    pad_key = get_bolt04_onion_key(b'pad', session_key)
     mix_header = generate_cipher_stream(pad_key, data_size)
 
     # compute routing info and MAC for each hop
     for i in range(num_hops-1, -1, -1):
-        rho_key = get_bolt04_spero_key(b'rho', hop_shared_secrets[i])
-        mu_key = get_bolt04_spero_key(b'mu', hop_shared_secrets[i])
+        rho_key = get_bolt04_onion_key(b'rho', hop_shared_secrets[i])
+        mu_key = get_bolt04_onion_key(b'mu', hop_shared_secrets[i])
         hops_data[i].hmac = next_hmac
         stream_bytes = generate_cipher_stream(rho_key, data_size)
         hop_data_bytes = hops_data[i].to_bytes()
@@ -256,7 +256,7 @@ def new_spero_packet(payment_path_pubkeys: Sequence[bytes], session_key: bytes,
         packet = mix_header + associated_data
         next_hmac = hmac_oneshot(mu_key, msg=packet, digest=hashlib.sha256)
 
-    return SperoPacket(
+    return OnionPacket(
         public_key=ecc.ECPrivkey(session_key).get_public_key_bytes(),
         hops_data=mix_header,
         hmac=next_hmac)
@@ -267,9 +267,9 @@ def calc_hops_data_for_payment(
         amount_msat: int,
         final_cltv: int, *,
         total_msat=None,
-        payment_secret: bytes = None) -> Tuple[List[SperoHopsDataSingle], int, int]:
+        payment_secret: bytes = None) -> Tuple[List[OnionHopsDataSingle], int, int]:
 
-    """Returns the hops_data to be used for constructing an spero packet,
+    """Returns the hops_data to be used for constructing an onion packet,
     and the amount_msat and cltv to be used on our immediate channel.
     """
     if len(route) > NUM_MAX_EDGES_IN_PAYMENT_PATH:
@@ -289,8 +289,8 @@ def calc_hops_data_for_payment(
             "total_msat": total_msat,
             "amount_msat": amt
         }
-    hops_data = [SperoHopsDataSingle(
-        is_tlv_payload=route[-1].has_feature_varspero(), payload=hop_payload)]
+    hops_data = [OnionHopsDataSingle(
+        is_tlv_payload=route[-1].has_feature_varonion(), payload=hop_payload)]
     # payloads, backwards from last hop (but excluding the first edge):
     for edge_index in range(len(route) - 1, 0, -1):
         route_edge = route[edge_index]
@@ -304,8 +304,8 @@ def calc_hops_data_for_payment(
             "short_channel_id": {"short_channel_id": route_edge.short_channel_id},
         }
         hops_data.append(
-            SperoHopsDataSingle(
-                is_tlv_payload=route[edge_index-1].has_feature_varspero(),
+            OnionHopsDataSingle(
+                is_tlv_payload=route[edge_index-1].has_feature_varonion(),
                 payload=hop_payload))
         if not is_trampoline:
             amt += route_edge.fee_for_edge(amt)
@@ -314,7 +314,7 @@ def calc_hops_data_for_payment(
     return hops_data, amt, cltv
 
 
-def _generate_filler(key_type: bytes, hops_data: Sequence[SperoHopsDataSingle],
+def _generate_filler(key_type: bytes, hops_data: Sequence[OnionHopsDataSingle],
                      shared_secrets: Sequence[bytes], data_size:int) -> bytes:
     num_hops = len(hops_data)
 
@@ -334,7 +334,7 @@ def _generate_filler(key_type: bytes, hops_data: Sequence[SperoHopsDataSingle],
         # hop's frame count as its size.
         filler_end = data_size + len(hops_data[i].to_bytes())
 
-        stream_key = get_bolt04_spero_key(key_type, shared_secrets[i])
+        stream_key = get_bolt04_onion_key(key_type, shared_secrets[i])
         stream_bytes = generate_cipher_stream(stream_key, 2 * data_size)
         filler = xor_bytes(filler, stream_bytes[filler_start:filler_end])
         filler += bytes(filler_size - len(filler))  # right pad with zeroes
@@ -348,55 +348,55 @@ def generate_cipher_stream(stream_key: bytes, num_bytes: int) -> bytes:
                             data=bytes(num_bytes))
 
 
-class ProcessedSperoPacket(NamedTuple):
+class ProcessedOnionPacket(NamedTuple):
     are_we_final: bool
-    hop_data: SperoHopsDataSingle
-    next_packet: SperoPacket
-    trampoline_spero_packet: SperoPacket
+    hop_data: OnionHopsDataSingle
+    next_packet: OnionPacket
+    trampoline_onion_packet: OnionPacket
 
 
 # TODO replay protection
-def process_spero_packet(
-        spero_packet: SperoPacket,
+def process_onion_packet(
+        onion_packet: OnionPacket,
         associated_data: bytes,
-        our_spero_private_key: bytes,
-        is_trampoline=False) -> ProcessedSperoPacket:
-    if not ecc.ECPubkey.is_pubkey_bytes(spero_packet.public_key):
-        raise InvalidSperoPubkey()
-    shared_secret = get_ecdh(our_spero_private_key, spero_packet.public_key)
+        our_onion_private_key: bytes,
+        is_trampoline=False) -> ProcessedOnionPacket:
+    if not ecc.ECPubkey.is_pubkey_bytes(onion_packet.public_key):
+        raise InvalidOnionPubkey()
+    shared_secret = get_ecdh(our_onion_private_key, onion_packet.public_key)
     # check message integrity
-    mu_key = get_bolt04_spero_key(b'mu', shared_secret)
+    mu_key = get_bolt04_onion_key(b'mu', shared_secret)
     calculated_mac = hmac_oneshot(
-        mu_key, msg=spero_packet.hops_data+associated_data,
+        mu_key, msg=onion_packet.hops_data+associated_data,
         digest=hashlib.sha256)
-    if spero_packet.hmac != calculated_mac:
-        raise InvalidSperoMac()
-    # peel an spero layer off
-    rho_key = get_bolt04_spero_key(b'rho', shared_secret)
+    if onion_packet.hmac != calculated_mac:
+        raise InvalidOnionMac()
+    # peel an onion layer off
+    rho_key = get_bolt04_onion_key(b'rho', shared_secret)
     data_size = TRAMPOLINE_HOPS_DATA_SIZE if is_trampoline else HOPS_DATA_SIZE
     stream_bytes = generate_cipher_stream(rho_key, 2 * data_size)
-    padded_header = spero_packet.hops_data + bytes(data_size)
+    padded_header = onion_packet.hops_data + bytes(data_size)
     next_hops_data = xor_bytes(padded_header, stream_bytes)
     next_hops_data_fd = io.BytesIO(next_hops_data)
-    hop_data = SperoHopsDataSingle.from_fd(next_hops_data_fd)
+    hop_data = OnionHopsDataSingle.from_fd(next_hops_data_fd)
     # trampoline
-    trampoline_spero_packet = hop_data.payload.get('trampoline_spero_packet')
-    if trampoline_spero_packet:
-        top_version = trampoline_spero_packet.get('version')
-        top_public_key = trampoline_spero_packet.get('public_key')
-        top_hops_data = trampoline_spero_packet.get('hops_data')
+    trampoline_onion_packet = hop_data.payload.get('trampoline_onion_packet')
+    if trampoline_onion_packet:
+        top_version = trampoline_onion_packet.get('version')
+        top_public_key = trampoline_onion_packet.get('public_key')
+        top_hops_data = trampoline_onion_packet.get('hops_data')
         top_hops_data_fd = io.BytesIO(top_hops_data)
-        top_hmac = trampoline_spero_packet.get('hmac')
-        trampoline_spero_packet = SperoPacket(
+        top_hmac = trampoline_onion_packet.get('hmac')
+        trampoline_onion_packet = OnionPacket(
             public_key=top_public_key,
             hops_data=top_hops_data_fd.read(TRAMPOLINE_HOPS_DATA_SIZE),
             hmac=top_hmac)
     # calc next ephemeral key
-    blinding_factor = sha256(spero_packet.public_key + shared_secret)
+    blinding_factor = sha256(onion_packet.public_key + shared_secret)
     blinding_factor_int = int.from_bytes(blinding_factor, byteorder="big")
-    next_public_key_int = ecc.ECPubkey(spero_packet.public_key) * blinding_factor_int
+    next_public_key_int = ecc.ECPubkey(onion_packet.public_key) * blinding_factor_int
     next_public_key = next_public_key_int.get_public_key_bytes()
-    next_spero_packet = SperoPacket(
+    next_onion_packet = OnionPacket(
         public_key=next_public_key,
         hops_data=next_hops_data_fd.read(data_size),
         hmac=hop_data.hmac)
@@ -406,13 +406,13 @@ def process_spero_packet(
     else:
         # we are an intermediate node; forwarding
         are_we_final = False
-    return ProcessedSperoPacket(are_we_final, hop_data, next_spero_packet, trampoline_spero_packet)
+    return ProcessedOnionPacket(are_we_final, hop_data, next_onion_packet, trampoline_onion_packet)
 
 
-class FailedToDecodeSperoError(Exception): pass
+class FailedToDecodeOnionError(Exception): pass
 
 
-class SperoRoutingFailure(Exception):
+class OnionRoutingFailure(Exception):
 
     def __init__(self, code: int, data: bytes):
         self.code = code
@@ -430,29 +430,29 @@ class SperoRoutingFailure(Exception):
     def from_bytes(cls, failure_msg: bytes):
         failure_code = int.from_bytes(failure_msg[:2], byteorder='big')
         try:
-            failure_code = SperoFailureCode(failure_code)
+            failure_code = OnionFailureCode(failure_code)
         except ValueError:
             pass  # unknown failure code
         failure_data = failure_msg[2:]
-        return SperoRoutingFailure(failure_code, failure_data)
+        return OnionRoutingFailure(failure_code, failure_data)
 
     def code_name(self) -> str:
-        if isinstance(self.code, SperoFailureCode):
+        if isinstance(self.code, OnionFailureCode):
             return str(self.code.name)
         return f"Unknown error ({self.code!r})"
 
     def decode_data(self) -> Optional[Dict[str, Any]]:
         try:
-            message_type, payload = SperoWireSerializer.decode_msg(self.to_bytes())
+            message_type, payload = OnionWireSerializer.decode_msg(self.to_bytes())
         except lnmsg.FailedToParseMsg:
             payload = None
         return payload
 
 
-def construct_spero_error(
-        reason: SperoRoutingFailure,
-        spero_packet: SperoPacket,
-        our_spero_private_key: bytes,
+def construct_onion_error(
+        reason: OnionRoutingFailure,
+        onion_packet: OnionPacket,
+        our_onion_private_key: bytes,
 ) -> bytes:
     # create payload
     failure_msg = reason.to_bytes()
@@ -464,64 +464,64 @@ def construct_spero_error(
     error_packet += pad_len.to_bytes(2, byteorder="big")
     error_packet += bytes(pad_len)
     # add hmac
-    shared_secret = get_ecdh(our_spero_private_key, spero_packet.public_key)
-    um_key = get_bolt04_spero_key(b'um', shared_secret)
+    shared_secret = get_ecdh(our_onion_private_key, onion_packet.public_key)
+    um_key = get_bolt04_onion_key(b'um', shared_secret)
     hmac_ = hmac_oneshot(um_key, msg=error_packet, digest=hashlib.sha256)
     error_packet = hmac_ + error_packet
     # obfuscate
-    ammag_key = get_bolt04_spero_key(b'ammag', shared_secret)
+    ammag_key = get_bolt04_onion_key(b'ammag', shared_secret)
     stream_bytes = generate_cipher_stream(ammag_key, len(error_packet))
     error_packet = xor_bytes(error_packet, stream_bytes)
     return error_packet
 
 
-def _decode_spero_error(error_packet: bytes, payment_path_pubkeys: Sequence[bytes],
+def _decode_onion_error(error_packet: bytes, payment_path_pubkeys: Sequence[bytes],
                         session_key: bytes) -> Tuple[bytes, int]:
     """Returns the decoded error bytes, and the index of the sender of the error."""
     num_hops = len(payment_path_pubkeys)
     hop_shared_secrets = get_shared_secrets_along_route(payment_path_pubkeys, session_key)
     for i in range(num_hops):
-        ammag_key = get_bolt04_spero_key(b'ammag', hop_shared_secrets[i])
-        um_key = get_bolt04_spero_key(b'um', hop_shared_secrets[i])
+        ammag_key = get_bolt04_onion_key(b'ammag', hop_shared_secrets[i])
+        um_key = get_bolt04_onion_key(b'um', hop_shared_secrets[i])
         stream_bytes = generate_cipher_stream(ammag_key, len(error_packet))
         error_packet = xor_bytes(error_packet, stream_bytes)
         hmac_computed = hmac_oneshot(um_key, msg=error_packet[32:], digest=hashlib.sha256)
         hmac_found = error_packet[:32]
         if hmac_computed == hmac_found:
             return error_packet, i
-    raise FailedToDecodeSperoError()
+    raise FailedToDecodeOnionError()
 
 
-def decode_spero_error(error_packet: bytes, payment_path_pubkeys: Sequence[bytes],
-                       session_key: bytes) -> (SperoRoutingFailure, int):
+def decode_onion_error(error_packet: bytes, payment_path_pubkeys: Sequence[bytes],
+                       session_key: bytes) -> (OnionRoutingFailure, int):
     """Returns the failure message, and the index of the sender of the error."""
-    decrypted_error, sender_index = _decode_spero_error(error_packet, payment_path_pubkeys, session_key)
-    failure_msg = get_failure_msg_from_spero_error(decrypted_error)
+    decrypted_error, sender_index = _decode_onion_error(error_packet, payment_path_pubkeys, session_key)
+    failure_msg = get_failure_msg_from_onion_error(decrypted_error)
     return failure_msg, sender_index
 
 
-def get_failure_msg_from_spero_error(decrypted_error_packet: bytes) -> SperoRoutingFailure:
+def get_failure_msg_from_onion_error(decrypted_error_packet: bytes) -> OnionRoutingFailure:
     # get failure_msg bytes from error packet
     failure_len = int.from_bytes(decrypted_error_packet[32:34], byteorder='big')
     failure_msg = decrypted_error_packet[34:34+failure_len]
     # create failure message object
-    return SperoRoutingFailure.from_bytes(failure_msg)
+    return OnionRoutingFailure.from_bytes(failure_msg)
 
 
 
-# TODO maybe we should rm this and just use SperoWireSerializer and spero_wire.csv
-BADSPERO = SperoFailureCodeMetaFlag.BADSPERO
-PERM     = SperoFailureCodeMetaFlag.PERM
-NODE     = SperoFailureCodeMetaFlag.NODE
-UPDATE   = SperoFailureCodeMetaFlag.UPDATE
-class SperoFailureCode(IntEnum):
+# TODO maybe we should rm this and just use OnionWireSerializer and onion_wire.csv
+BADONION = OnionFailureCodeMetaFlag.BADONION
+PERM     = OnionFailureCodeMetaFlag.PERM
+NODE     = OnionFailureCodeMetaFlag.NODE
+UPDATE   = OnionFailureCodeMetaFlag.UPDATE
+class OnionFailureCode(IntEnum):
     INVALID_REALM =                           PERM | 1
     TEMPORARY_NODE_FAILURE =                  NODE | 2
     PERMANENT_NODE_FAILURE =                  PERM | NODE | 2
     REQUIRED_NODE_FEATURE_MISSING =           PERM | NODE | 3
-    INVALID_SPERO_VERSION =                   BADSPERO | PERM | 4
-    INVALID_SPERO_HMAC =                      BADSPERO | PERM | 5
-    INVALID_SPERO_KEY =                       BADSPERO | PERM | 6
+    INVALID_ONION_VERSION =                   BADONION | PERM | 4
+    INVALID_ONION_HMAC =                      BADONION | PERM | 5
+    INVALID_ONION_KEY =                       BADONION | PERM | 6
     TEMPORARY_CHANNEL_FAILURE =               UPDATE | 7
     PERMANENT_CHANNEL_FAILURE =               PERM | 8
     REQUIRED_CHANNEL_FEATURE_MISSING =        PERM | 9
@@ -537,11 +537,11 @@ class SperoFailureCode(IntEnum):
     FINAL_INCORRECT_HTLC_AMOUNT =             19
     CHANNEL_DISABLED =                        UPDATE | 20
     EXPIRY_TOO_FAR =                          21
-    INVALID_SPERO_PAYLOAD =                   PERM | 22
+    INVALID_ONION_PAYLOAD =                   PERM | 22
     MPP_TIMEOUT =                             23
     TRAMPOLINE_FEE_INSUFFICIENT =             NODE | 51
     TRAMPOLINE_EXPIRY_TOO_SOON =              NODE | 52
 
 
 # don't use these elsewhere, the names are ambiguous without context
-del BADSPERO; del PERM; del NODE; del UPDATE
+del BADONION; del PERM; del NODE; del UPDATE

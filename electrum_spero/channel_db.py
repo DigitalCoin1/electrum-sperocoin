@@ -207,13 +207,13 @@ class NodeInfo(NamedTuple):
                 port = int.from_bytes(read(2), 'big')
                 if is_ip_address(ipv6_addr) and port != 0:
                     addresses.append((ipv6_addr, port))
-            elif atype == 3:  # spero v2
-                host = base64.b32encode(read(10)) + b'.spero'
+            elif atype == 3:  # onion v2
+                host = base64.b32encode(read(10)) + b'.onion'
                 host = host.decode('ascii').lower()
                 port = int.from_bytes(read(2), 'big')
                 addresses.append((host, port))
-            elif atype == 4:  # spero v3
-                host = base64.b32encode(read(35)) + b'.spero'
+            elif atype == 4:  # onion v3
+                host = base64.b32encode(read(35)) + b'.onion'
                 host = host.decode('ascii').lower()
                 port = int.from_bytes(read(2), 'big')
                 addresses.append((host, port))
