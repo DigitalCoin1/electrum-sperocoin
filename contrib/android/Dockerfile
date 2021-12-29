@@ -1,6 +1,6 @@
 # based on https://github.com/kivy/python-for-android/blob/master/Dockerfile
 
-FROM ubuntu:20.04
+FROM ubuntu:20.04@sha256:86ac87f73641c920fb42cc9612d4fb57b5626b56ea2a19b894d0673fd5b4f2e9
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -40,11 +40,11 @@ RUN curl --location --progress-bar \
 ENV ANDROID_SDK_HOME="${ANDROID_HOME}/android-sdk"
 
 # get the latest version from https://developer.android.com/studio/index.html
-ENV ANDROID_SDK_TOOLS_VERSION="6514223"
+ENV ANDROID_SDK_TOOLS_VERSION="7583922"
 ENV ANDROID_SDK_BUILD_TOOLS_VERSION="29.0.3"
 ENV ANDROID_SDK_TOOLS_ARCHIVE="commandlinetools-linux-${ANDROID_SDK_TOOLS_VERSION}_latest.zip"
 ENV ANDROID_SDK_TOOLS_DL_URL="https://dl.google.com/android/repository/${ANDROID_SDK_TOOLS_ARCHIVE}"
-ENV ANDROID_SDK_MANAGER="${ANDROID_SDK_HOME}/tools/bin/sdkmanager --sdk_root=${ANDROID_SDK_HOME}"
+ENV ANDROID_SDK_MANAGER="${ANDROID_SDK_HOME}/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_SDK_HOME}"
 
 # download and install Android SDK
 RUN curl --location --progress-bar \
@@ -68,9 +68,10 @@ RUN yes | ${ANDROID_SDK_MANAGER} --licenses > /dev/null
 # download platforms, API, build tools
 RUN ${ANDROID_SDK_MANAGER} "platforms;android-24" > /dev/null && \
     ${ANDROID_SDK_MANAGER} "platforms;android-29" > /dev/null && \
+    ${ANDROID_SDK_MANAGER} "platforms;android-30" > /dev/null && \
     ${ANDROID_SDK_MANAGER} "build-tools;${ANDROID_SDK_BUILD_TOOLS_VERSION}" > /dev/null && \
     ${ANDROID_SDK_MANAGER} "extras;android;m2repository" > /dev/null && \
-    chmod +x "${ANDROID_SDK_HOME}/tools/bin/avdmanager"
+    chmod +x "${ANDROID_SDK_HOME}/cmdline-tools/bin/avdmanager"
 
 # download ANT
 ENV APACHE_ANT_VERSION="1.9.4"

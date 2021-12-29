@@ -7,7 +7,7 @@ title = SperoCoin Electrum
 package.name = electrum_spero
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.electrum_spero
+package.domain = org.sperocoin.electrum
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -74,7 +74,7 @@ android.permissions = INTERNET, CAMERA, WRITE_EXTERNAL_STORAGE
 
 # (int) Android API to use  (targetSdkVersion AND compileSdkVersion)
 # note: when changing, Dockerfile also needs to be changed to install corresponding build tools
-android.api = 29
+android.api = 30
 
 # (int) Minimum API required. You will need to set the android.ndk_api to be as low as this value.
 android.minapi = 21
@@ -96,6 +96,17 @@ android.sdk_path = /opt/android/android-sdk
 
 # (str) ANT directory (if empty, it will be automatically downloaded.)
 android.ant_path = /opt/android/apache-ant
+
+# (bool) If True, then skip trying to update the Android sdk	
+# This can be useful to avoid excess Internet downloads or save time	
+# when an update is due and you just want to test/build your package	
+# note(ghost43): probably needed for reproducibility. versions pinned in Dockerfile.	
+android.skip_update = True	
+# (bool) If True, then automatically accept SDK license	
+# agreements. This is intended for automation only. If set to False,	
+# the default, you will be shown the license when first running	
+# buildozer.	
+android.accept_sdk_license = True
 
 # (str) Android entry point, default is ok for Kivy-based app
 #android.entrypoint = org.renpy.android.PythonActivity
@@ -192,6 +203,9 @@ p4a.local_recipes = %(source.dir)s/contrib/p4a
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
 log_level = 2
+
+# (str) Path to build output (i.e. .apk, .ipa) storage	
+bin_dir = ./dist
 
 
 # -----------------------------------------------------------------------------
