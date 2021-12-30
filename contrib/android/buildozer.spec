@@ -7,7 +7,7 @@ title = SperoCoin Electrum
 package.name = electrum_spero
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.sperocoin.electrum
+package.domain = org.electrum_spero
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -26,7 +26,9 @@ source.exclude_dirs = bin, build, dist, contrib,
     packages/qdarkstyle,
     packages/qtpy
 # (list) List of exclusions using pattern matching
-source.exclude_patterns = Makefile,setup*
+source.exclude_patterns = Makefile,setup*,
+    # not reproducible:
+    packages/aiohttp-*.dist-info/*
 
 # (str) Application versioning (method 1)
 version.regex = APK_VERSION = '(.*)'
@@ -80,7 +82,7 @@ android.api = 30
 android.minapi = 21
 
 # (str) Android NDK version to use
-android.ndk = 19c
+android.ndk = 22b
 
 # (int) Android NDK API to use (optional). This is the minimum API your app will support.
 android.ndk_api = 21
@@ -202,7 +204,7 @@ p4a.local_recipes = %(source.dir)s/contrib/p4a
 [buildozer]
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
-log_level = 2
+log_level = 1
 
 # (str) Path to build output (i.e. .apk, .ipa) storage	
 bin_dir = ./dist

@@ -7,3 +7,6 @@
 [submodule "electrum_spero/www"]
 	path = electrum_spero/www
 	url = https://github.com/spesmilo/electrum-http
+[submodule "electrum_spero/gui/kivy/theming/atlas"]
+	path = electrum_spero/gui/kivy/theming/atlas
+	url = https://github.com/spesmilo/electrum-kivy-atlas
