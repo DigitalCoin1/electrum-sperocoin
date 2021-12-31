@@ -1,9 +1,9 @@
 [![Build Status](https://travis-ci.com/DigitalCoin1/electrum-sperocoin.svg?branch=master)](https://travis-ci.com/DigitalCoin1/electrum-sperocoin)
 
-electrum-spero - Lightweight SperoCoin client
+electrum-sperocoin - Lightweight SperoCoin client
 ==========================================
 
-electrum-spero is a port of Electrum, the Bitcoin wallet, to SperoCoin.
+electrum-sperocoin is a port of Electrum, the Bitcoin wallet, to SperoCoin.
 
     Licence: MIT Licence
     Original Author: Thomas Voegtlin
@@ -19,7 +19,7 @@ electrum-spero is a port of Electrum, the Bitcoin wallet, to SperoCoin.
 Getting started
 ===============
 
-electrum-spero itself is pure Python, and so are most of the required dependencies,
+electrum-sperocoin itself is pure Python, and so are most of the required dependencies,
 but not everything. The following sections describe how to run from source, but here
 is a TL;DR::
 
@@ -60,20 +60,20 @@ Running from tar.gz
 -------------------
 
 If you downloaded the official package (tar.gz), you can run
-electrum-spero from its root directory without installing it on your
+electrum-sperocoin from its root directory without installing it on your
 system; all the pure python dependencies are included in the 'packages'
-directory. To run electrum-spero from its root directory, just do::
+directory. To run electrum-sperocoin from its root directory, just do::
 
     ./run_electrum
 
-You can also install electrum-spero on your system, by running this command::
+You can also install electrum-sperocoin on your system, by running this command::
 
     sudo apt-get install python3-setuptools python3-pip
     python3 -m pip install --user .
 
 This will download and install the Python dependencies used by
-electrum-spero instead of using the 'packages' directory.
-It will also place an executable named :code:`electrum-spero` in :code:`~/.local/bin`,
+electrum-sperocoin instead of using the 'packages' directory.
+It will also place an executable named :code:`electrum-sperocoin` in :code:`~/.local/bin`,
 so make sure that is on your :code:`PATH` variable.
 
 
@@ -83,7 +83,7 @@ Development version (git clone)
 Check out the code from GitHub::
 
     git clone git://github.com/DigitalCoin1/electrum-sperocoin.git
-    cd electrum-spero
+    cd electrum-sperocoin
     git submodule update --init
 
 Run install (this should install dependencies)::
@@ -96,7 +96,7 @@ Create translations (optional)::
     sudo apt-get install python-requests gettext
     ./contrib/pull_locale
 
-Finally, to start electrum-spero::
+Finally, to start electrum-sperocoin::
 
     ./run_electrum
 
